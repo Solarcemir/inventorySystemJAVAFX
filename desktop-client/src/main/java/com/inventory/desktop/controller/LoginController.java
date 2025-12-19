@@ -51,30 +51,28 @@ public class LoginController {
 
                 boolean finalLoginSuccess = loginSuccess;
                 Platform.runLater(() -> {
-                    Alert alert = new Alert(finalLoginSuccess ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
-                    alert.setTitle("Login");
-                    alert.setHeaderText(null);
-                    alert.setContentText(finalLoginSuccess ? "Login exitoso" : "Usuario o contraseña incorrectos");
-                    alert.showAndWait();
-
-
-
                     if (finalLoginSuccess) {
-                    // Cargar nueva escena de productos
-                    try {
-                        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
-                        Parent root = loader.load();
-                        Scene scene = new Scene(root);
-                        Stage stage = (Stage) usernameField.getScene().getWindow();
-                        stage.setScene(scene);
-                        stage.show();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        // Cargar nueva escena de productos
+                        try {
+                            System.out.println("Cargando main.fxml...");
+                            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+                            Parent root = loader.load();
+                            Scene scene = new Scene(root);
+                            Stage stage = (Stage) usernameField.getScene().getWindow();
+                            stage.setScene(scene);
+                            stage.show();
+                            System.out.println("Escena cambiada exitosamente");
+                        } catch (Exception e) {
+                            System.err.println("Error al cargar main.fxml: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Login");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Usuario o contraseña incorrectos");
+                        alert.showAndWait();
                     }
-                }
-
-
-
                 });
 
             } catch (Exception e) {

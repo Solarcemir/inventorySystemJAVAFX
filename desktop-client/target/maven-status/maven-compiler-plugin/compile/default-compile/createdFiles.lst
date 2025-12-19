@@ -1,2 +1,3 @@
 com\inventory\desktop\Main.class
+com\inventory\desktop\controller\MainController.class
 com\inventory\desktop\controller\LoginController.class
