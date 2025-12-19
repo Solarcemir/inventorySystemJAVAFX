@@ -47,8 +47,39 @@ public class MainController {
 
     @FXML
     private void showAddProduct() {
-        System.out.println("Mostrando Agregar Producto");
+        System.out.println("Mostrando Add product");
         // Lógica para mostrar la pantalla de agregar producto
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/add_product.fxml"));
+            Parent homeViewParent = loader.load();
+            
+            // Configurar para que ocupe todo el espacio del contentArea
+            AnchorPane.setTopAnchor(homeViewParent, 0.0);
+            AnchorPane.setBottomAnchor(homeViewParent, 0.0);
+            AnchorPane.setLeftAnchor(homeViewParent, 0.0);
+            AnchorPane.setRightAnchor(homeViewParent, 0.0);
+            
+            contentArea.getChildren().setAll(homeViewParent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     @FXML

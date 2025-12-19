@@ -1,15 +1,19 @@
 package com.inventory.desktop.controller;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -22,11 +26,58 @@ public class HomeController {
     @FXML
     private Button newNoteButton;
 
+    @FXML
+    private Label main_product_count;
+    @FXML
+    private Label main_clients_count;
+    @FXML
+    private Label main_sales_count;
+
     private final Path NOTES_FILE = Path.of("notes.txt");
 
     @FXML
     public void initialize() {
         loadNotes();
+        loadCounts();
+    }
+
+    private void loadCounts() {
+        // Productos
+        new Thread(() -> {
+            try {
+                URL url = new URL("http://localhost:8080/api/products/count");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                if (conn.getResponseCode() == 200) {
+                    long count = new java.util.Scanner(conn.getInputStream()).nextLong();
+                    Platform.runLater(() -> main_product_count.setText(String.valueOf(count)));
+                }
+            } catch (Exception e) { Platform.runLater(() -> main_product_count.setText("--")); }
+        }).start();
+        // Clientes
+        new Thread(() -> {
+            try {
+                URL url = new URL("http://localhost:8080/api/clients/count");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                if (conn.getResponseCode() == 200) {
+                    long count = new java.util.Scanner(conn.getInputStream()).nextLong();
+                    Platform.runLater(() -> main_clients_count.setText(String.valueOf(count)));
+                }
+            } catch (Exception e) { Platform.runLater(() -> main_clients_count.setText("--")); }
+        }).start();
+        // Ventas
+        new Thread(() -> {
+            try {
+                URL url = new URL("http://localhost:8080/api/sales/count");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                if (conn.getResponseCode() == 200) {
+                    long count = new java.util.Scanner(conn.getInputStream()).nextLong();
+                    Platform.runLater(() -> main_sales_count.setText(String.valueOf(count)));
+                }
+            } catch (Exception e) { Platform.runLater(() -> main_sales_count.setText("--")); }
+        }).start();
     }
 
     /**

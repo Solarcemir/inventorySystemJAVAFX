@@ -55,4 +55,7 @@ public class ProductService {
     return repo.save(product);
   }
 
+   public long getProductCount(){
+    return repo.count();
+   }
 }

@@ -20,6 +20,9 @@ public class Product {
     @Column(name = "quantity")
     private Integer productQuantity;
 
+     @Column(name = "category")
+    private String category;
+
     private BigDecimal price;
 
     @Column(name = "image_path")
@@ -49,9 +52,20 @@ public class Product {
         return provider;
     }
 
+    
     public void setProvider(String provider) {
         this.provider = provider;
     }
+
+
+    public String getCategory(){
+        return category;
+    }
+
+    public void setCategory(String category){
+        this.category = category;
+    }
+
 
     public Integer getProductQuantity() {
         return productQuantity;

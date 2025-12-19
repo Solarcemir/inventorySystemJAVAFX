@@ -49,5 +49,11 @@ public class ProductController {
     ProductService.deleteProductbyId(id);
   }
 
+  //return counts
+  @GetMapping("/count")
+  public long getProductCount(){
+    return ProductService.getProductCount();
+  }
+
 }
 

@@ -32,7 +32,7 @@
                      <children>
                         <ImageView fitHeight="120.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="false">
                            <image>
-                              <Image url="@/images/home1.png" />
+                              <Image url="@../images/home1.1.png" />
                            </image>
                         </ImageView>
                      </children>
@@ -56,7 +56,7 @@
                      <children>
                         <ImageView fitHeight="120.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="false">
                            <image>
-                              <Image url="@/images/home2.png" />
+                              <Image url="@../images/home2.1.png" />
                            </image>
                         </ImageView>
                      </children>
@@ -80,7 +80,7 @@
                      <children>
                         <ImageView fitHeight="120.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="false">
                            <image>
-                              <Image url="@/images/home3.png" />
+                              <Image url="@../images/home3.1.png" />
                            </image>
                         </ImageView>
                      </children>
@@ -99,7 +99,7 @@
             </HBox>
             <ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: transparent; -fx-background-color: transparent;" VBox.vgrow="ALWAYS">
                <content>
-                  <FlowPane fx:id="notesContainer" hgap="10.0" vgap="10.0" style="-fx-background-color: transparent;" />
+                  <FlowPane fx:id="notesContainer" hgap="10.0" style="-fx-background-color: transparent;" vgap="10.0" />
                </content>
             </ScrollPane>
          </children>
