@@ -3,7 +3,7 @@ package com.inventory.backend.controller;
 import com.inventory.backend.model.*;
 import com.inventory.backend.services.ProductService;
 
-import main.java.com.inventory.backend.model.Product;
+import com.inventory.backend.model.Product;
 
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -46,7 +46,7 @@ public class ProductController {
 
   @DeleteMapping("/{id}")
   public void delete(@PathVariable Long id){
-    return ProductService.deleteProductbyId(id);
+    ProductService.deleteProductbyId(id);
   }
 
 }

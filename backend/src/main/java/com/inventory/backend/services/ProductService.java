@@ -39,7 +39,7 @@ public class ProductService {
   }
 
   public Product getProductbyName(String name){
-    return repo.findProductByName(name);
+    return repo.findProductByProductName(name);
   }
 
   public Product updateProduct(Long id, Product productDetails) {
