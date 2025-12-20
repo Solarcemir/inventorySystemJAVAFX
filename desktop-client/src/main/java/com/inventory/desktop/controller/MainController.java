@@ -85,7 +85,21 @@ public class MainController {
     @FXML
     private void showInventory() {
         System.out.println("Mostrando Inventario");
-        // Lógica para mostrar la pantalla de inventario
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/view_product.fxml"));
+            Parent viewParent = loader.load();
+            
+            // Configurar para que ocupe todo el espacio del contentArea
+            AnchorPane.setTopAnchor(viewParent, 0.0);
+            AnchorPane.setBottomAnchor(viewParent, 0.0);
+            AnchorPane.setLeftAnchor(viewParent, 0.0);
+            AnchorPane.setRightAnchor(viewParent, 0.0);
+            
+            contentArea.getChildren().setAll(viewParent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

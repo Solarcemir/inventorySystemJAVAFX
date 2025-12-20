@@ -1,9 +1,11 @@
 package com.inventory.backend.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "sales")
 public class Sale {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,15 +15,18 @@ public class Sale {
     private Product product;
 
     private int quantity;
+    
+    private BigDecimal totalAmount;
 
-    private LocalDateTime date;
+    private LocalDateTime saleDate;
 
     public Sale() {}
 
-    public Sale(Product product, int quantity, LocalDateTime date) {
+    public Sale(Product product, int quantity, BigDecimal totalAmount, LocalDateTime saleDate) {
         this.product = product;
         this.quantity = quantity;
-        this.date = date;
+        this.totalAmount = totalAmount;
+        this.saleDate = saleDate;
     }
 
     public Long getId() { return id; }
@@ -29,6 +34,8 @@ public class Sale {
     public void setProduct(Product product) { this.product = product; }
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
-    public LocalDateTime getDate() { return date; }
-    public void setDate(LocalDateTime date) { this.date = date; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public LocalDateTime getSaleDate() { return saleDate; }
+    public void setSaleDate(LocalDateTime saleDate) { this.saleDate = saleDate; }
 }

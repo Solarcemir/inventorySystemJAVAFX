@@ -12,6 +12,12 @@ import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import javafx.stage.Popup;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 public class AddProductController {
     @FXML private TextField product_name;
@@ -49,15 +55,42 @@ public class AddProductController {
         
         File selectedFile = fileChooser.showOpenDialog(button_browse.getScene().getWindow());
         if (selectedFile != null) {
-            String path = selectedFile.getAbsolutePath();
-            img_url.setText(path);
             try {
-                Image img = new Image(selectedFile.toURI().toString());
+                // Copiar imagen a carpeta local del programa
+                String copiedPath = copyImageToLocalFolder(selectedFile);
+                img_url.setText(copiedPath);
+                
+                // Mostrar preview
+                Image img = new Image(new File(copiedPath).toURI().toString());
                 load_image.setImage(img);
             } catch (Exception e) {
+                showAlert("Error copying image: " + e.getMessage());
                 e.printStackTrace();
             }
         }
+    }
+    
+    private String copyImageToLocalFolder(File sourceFile) throws Exception {
+        // Crear carpeta de imágenes si no existe
+        Path imagesDir = Paths.get("product-images");
+        if (!Files.exists(imagesDir)) {
+            Files.createDirectories(imagesDir);
+        }
+        
+        // Generar nombre único para la imagen
+        String extension = "";
+        String fileName = sourceFile.getName();
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex > 0) {
+            extension = fileName.substring(dotIndex);
+        }
+        String uniqueFileName = UUID.randomUUID().toString() + extension;
+        
+        // Copiar archivo
+        Path targetPath = imagesDir.resolve(uniqueFileName);
+        Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+        
+        return targetPath.toString();
     }
 
     private void saveProduct() {
@@ -71,6 +104,10 @@ public class AddProductController {
 
         if (name.isEmpty() || priceText.isEmpty()) {
             showAlert("Missing required fields");
+            return;
+        }
+        if (quantity < 1) {
+            showAlert("Quantity must be at least 1");
             return;
         }
         BigDecimal price;
@@ -87,7 +124,7 @@ public class AddProductController {
                 URL url = new URL("http://localhost:8080/api/products");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
                 conn.setDoOutput(true);
 
                 // Escapar comillas y caracteres especiales
@@ -95,7 +132,7 @@ public class AddProductController {
                 String escapedProvider = provider.replace("\"", "\\\"").replace("\\", "\\\\");
                 String escapedCat = cat.replace("\"", "\\\"").replace("\\", "\\\\");
                 String escapedDesc = desc.replace("\"", "\\\"").replace("\\", "\\\\");
-                String escapedImagePath = imagePath.replace("\"", "\\\"").replace("\\", "\\\\");
+                String escapedImagePath = imagePath.replace("\\", "/");
                 
                 String json = String.format(
                     "{\"productName\":\"%s\",\"provider\":\"%s\",\"category\":\"%s\",\"description\":\"%s\",\"price\":%s,\"productQuantity\":%d,\"imagePath\":\"%s\"}",
@@ -105,7 +142,7 @@ public class AddProductController {
                 System.out.println("Sending JSON: " + json);
                 
                 try (OutputStream os = conn.getOutputStream()) {
-                    os.write(json.getBytes());
+                    os.write(json.getBytes("UTF-8"));
                 }
 
                 int responseCode = conn.getResponseCode();
@@ -126,8 +163,9 @@ public class AddProductController {
                 
                 Platform.runLater(() -> {
                     if (responseCode == 200 || responseCode == 201) {
+                        System.out.println("Product saved successfully! Showing popup...");
                         updatePreview(name, provider, cat, desc, price, quantity, imagePath);
-                        showSuccessAlert("Product saved successfully!");
+                        showSuccessPopup();
                         clearForm();
                     } else {
                         showAlert("Error saving product. Response code: " + responseCode);
@@ -150,12 +188,25 @@ public class AddProductController {
         quantity_spinner.getValueFactory().setValue(0);
     }
     
-    private void showSuccessAlert(String msg) {
+    private void showSuccessPopup() {
+        System.out.println("showSuccessPopup() called");
+        
+        // Usar Alert temporalmente para confirmar que funciona
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Success");
         alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
+        alert.setContentText("✓ Product saved successfully!");
+        alert.show();
+        
+        // Auto-cerrar después de 2 segundos
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000);
+                Platform.runLater(() -> alert.close());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void updatePreview(String name, String provider, String cat, String desc, BigDecimal price, int quantity, String imagePath) {

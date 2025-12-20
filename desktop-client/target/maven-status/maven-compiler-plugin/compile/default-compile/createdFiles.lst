@@ -1,3 +1,7 @@
 com\inventory\desktop\Main.class
+com\inventory\desktop\controller\AddProductController.class
+com\inventory\desktop\controller\HomeController.class
 com\inventory\desktop\controller\MainController.class
+com\inventory\desktop\model\Product.class
 com\inventory\desktop\controller\LoginController.class
+com\inventory\desktop\controller\ViewProductController.class

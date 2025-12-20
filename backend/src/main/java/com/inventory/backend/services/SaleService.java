@@ -6,6 +6,7 @@ import com.inventory.backend.repository.ProductRepository;
 import com.inventory.backend.repository.SaleRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,7 +23,21 @@ public class SaleService {
     public Sale createSale(Long productId, int quantity) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Producto no encontrado"));
-        Sale sale = new Sale(product, quantity, LocalDateTime.now());
+        
+        // Verificar stock disponible
+        if (product.getProductQuantity() < quantity) {
+            throw new RuntimeException("Stock insuficiente. Disponible: " + product.getProductQuantity());
+        }
+        
+        // Calcular total
+        BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+        
+        // Reducir inventario
+        product.setProductQuantity(product.getProductQuantity() - quantity);
+        productRepository.save(product);
+        
+        // Crear venta
+        Sale sale = new Sale(product, quantity, totalAmount, LocalDateTime.now());
         return saleRepository.save(sale);
     }
 

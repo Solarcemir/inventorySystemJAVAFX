@@ -7,9 +7,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.shape.Line?>
-
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.AddProductController">
    <children>
@@ -24,7 +22,7 @@
                   <TextField fx:id="category" layoutX="34.0" layoutY="156.0" prefHeight="30.0" prefWidth="201.0" promptText="Category" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
                   <TextField fx:id="description" layoutX="34.0" layoutY="194.0" prefHeight="30.0" prefWidth="201.0" promptText="Description" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
                   <TextField fx:id="product_price" layoutX="34.0" layoutY="232.0" prefHeight="30.0" prefWidth="201.0" promptText="Price (e.g., 99.99)" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <Label layoutX="34.0" layoutY="273.0" text="Quantity:" style="-fx-font-weight: bold; -fx-text-fill: #1565C0;" />
+                  <Label layoutX="34.0" layoutY="273.0" style="-fx-font-weight: bold; -fx-text-fill: #1565C0;" text="Quantity:" />
                   <Spinner fx:id="quantity_spinner" editable="true" layoutX="159.0" layoutY="270.0" prefHeight="30.0" prefWidth="75.0" style="-fx-background-radius: 5;" />
                   <TextField fx:id="img_url" layoutX="34.0" layoutY="310.0" prefHeight="30.0" prefWidth="142.0" promptText="Image Path" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
                   <Button fx:id="button_browse" layoutX="180.0" layoutY="310.0" mnemonicParsing="false" prefHeight="30.0" style="-fx-background-color: #42A5F5; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;" text="Browse" />
@@ -33,14 +31,14 @@
             </AnchorPane>
           <AnchorPane prefHeight="404.0" prefWidth="318.0" style="-fx-background-color: linear-gradient(to bottom, #FFF8E1, #FFECB3);">
                <children>
-                  <Label layoutX="115.0" layoutY="10.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F57C00;" text="Preview" />
-                  <ImageView fx:id="load_image" fitHeight="180.0" fitWidth="280.0" layoutX="19.0" layoutY="40.0" pickOnBounds="true" preserveRatio="true" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2); -fx-border-color: #FFB74D; -fx-border-width: 2;" />
-                  <Label fx:id="product_name_map" layoutX="19.0" layoutY="230.0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #E65100;" text="Product Name" />
-                  <Label fx:id="vendor_map" layoutX="19.0" layoutY="255.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Vendor: " />
-                  <Label fx:id="category_map" layoutX="19.0" layoutY="275.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Category:" />
-                  <Label fx:id="price_map" layoutX="19.0" layoutY="295.0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;" text="Price:" />
-                  <Label fx:id="quantity_map" layoutX="19.0" layoutY="315.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Quantity:" />
-                  <Label fx:id="description_map" layoutX="19.0" layoutY="335.0" style="-fx-font-size: 12px; -fx-text-fill: #616161; -fx-wrap-text: true;" text="Description:" />
+                  <Label layoutX="130.0" layoutY="5.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F57C00;" text="Preview" />
+                  <ImageView fx:id="load_image" fitHeight="260.0" fitWidth="305.0" layoutX="7.0" layoutY="30.0" pickOnBounds="true" preserveRatio="false" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2);" />
+                  <Label fx:id="product_name_map" layoutX="15.0" layoutY="300.0" prefWidth="290.0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #E65100; -fx-alignment: center;" text="Product Name" />
+                  <Label fx:id="vendor_map" layoutX="15.0" layoutY="325.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Vendor: " />
+                  <Label fx:id="category_map" layoutX="15.0" layoutY="345.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Category:" />
+                  <Label fx:id="description_map" layoutX="15.0" layoutY="365.0" prefWidth="290.0" style="-fx-font-size: 12px; -fx-text-fill: #424242;" text="Description:" />
+                  <Label fx:id="price_map" layoutX="15.0" layoutY="385.0" prefWidth="290.0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;" text="Price:" />
+                  <Label fx:id="quantity_map" layoutX="15.0" layoutY="405.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Quantity:" />
                </children>
             </AnchorPane>
         </items>
