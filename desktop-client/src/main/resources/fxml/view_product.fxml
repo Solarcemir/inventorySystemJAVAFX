@@ -34,15 +34,15 @@
           </AnchorPane>
           
           <!-- Panel derecho: Detalles -->
-          <AnchorPane minWidth="250.0" style="-fx-background-color: linear-gradient(to bottom, #FFF8E1, #FFECB3);">
+          <AnchorPane minWidth="250.0" style="-fx-background-color:linear-gradient(to bottom, #f2faffff, #ffffffff);">
             <children>
-              <Label layoutX="80.0" layoutY="10.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #F57C00;" text="Product Details" />
+              <Label layoutX="80.0" layoutY="10.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #080909ff;" text="Product Details" />
               
               <!-- Imagen del producto -->
               <ImageView fx:id="table_image" fitHeight="140.0" fitWidth="200.0" layoutX="25.0" layoutY="40.0" pickOnBounds="true" preserveRatio="true" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);" />
               
               <!-- Detalles -->
-              <Label fx:id="detail_name" layoutX="15.0" layoutY="190.0" prefWidth="220.0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E65100;" text="Select a product" />
+              <Label fx:id="detail_name" layoutX="15.0" layoutY="190.0" prefWidth="220.0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #030303ff;" text="Select a product" />
               <Label fx:id="detail_provider" layoutX="15.0" layoutY="215.0" prefWidth="220.0" style="-fx-font-size: 11px; -fx-text-fill: #424242;" text="Provider:" />
               <Label fx:id="detail_category" layoutX="15.0" layoutY="235.0" prefWidth="220.0" style="-fx-font-size: 11px; -fx-text-fill: #424242;" text="Category:" />
               <Label fx:id="detail_description" layoutX="15.0" layoutY="255.0" prefHeight="40.0" prefWidth="220.0" style="-fx-font-size: 10px; -fx-text-fill: #616161;" text="Description:" wrapText="true" />
