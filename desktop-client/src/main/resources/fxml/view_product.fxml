@@ -13,7 +13,7 @@
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.layout.Region?>
 
-<SplitPane dividerPositions="0.58" style="-fx-background-color: #f0f2f5;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.ViewProductController">
+<SplitPane dividerPositions="0.54" style="-fx-background-color: #f0f2f5;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.ViewProductController">
    
    <VBox style="-fx-background-color: white;">
       <padding>
@@ -32,7 +32,7 @@
       
       <Region prefHeight="12.0" />
       
-      <TableView fx:id="table_view" VBox.vgrow="ALWAYS" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #e0e0e0;">
+      <TableView fx:id="table_view" VBox.vgrow="ALWAYS"  style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #e0e0e0;">
          <columns>
             <TableColumn fx:id="col_id" minWidth="50.0" prefWidth="55.0" text="ID" />
             <TableColumn fx:id="col_name" minWidth="130.0" prefWidth="160.0" text="Name" />

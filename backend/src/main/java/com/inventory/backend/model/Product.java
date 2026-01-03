@@ -36,11 +36,11 @@ public class Product {
     @Column(name = "deleted")
     private Boolean deleted = false;
 
-    // 🔹 Constructor vacío (OBLIGATORIO para JPA)
+  
     public Product() {
     }
 
-    // 🔹 Getters y Setters
+    //  Getters y Setters
 
     public Long getId() {
         return id;
