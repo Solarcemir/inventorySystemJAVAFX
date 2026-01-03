@@ -45,4 +45,10 @@ public class ClientController {
     public Client getMostLoyalClient() {
         return clientService.findMostLoyalClient();
     }
+
+
+    @GetMapping
+    public long getClientCount(){
+        return clientService.getClientCount();
+    }
 }
