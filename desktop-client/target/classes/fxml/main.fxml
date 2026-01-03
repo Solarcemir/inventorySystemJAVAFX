@@ -40,6 +40,7 @@
             <Button fx:id="add_product" onAction="#showAddProduct" prefWidth="140.0" style="-fx-background-color: #BBDEFB; -fx-text-fill: white; -fx-background-radius: 5;" text="ADD PRODUCT" />
             <Button fx:id="view_inventory" onAction="#showInventory" prefWidth="140.0" style="-fx-background-color: #BBDEFB; -fx-text-fill: white; -fx-background-radius: 5;" text="VIEW INVENTORY" />
             <Button fx:id="analytics" onAction="#showAnalytics" prefWidth="140.0" style="-fx-background-color: #BBDEFB; -fx-text-fill: white; -fx-background-radius: 5;" text="ANALYTICS" />
+            <Button fx:id="clients" onAction="#showClients" prefWidth="140.0" style="-fx-background-color: #BBDEFB; -fx-text-fill: white; -fx-background-radius: 5;" text="ClIENTS" />
         </VBox>
     </left>
 

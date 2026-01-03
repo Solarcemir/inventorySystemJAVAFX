@@ -67,20 +67,31 @@ public class MainController {
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
+
+
+
+    @FXML
+    private void showClients(){
+         System.out.println("Mostrando Clientes");
+         try {
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(null));
+            Parent viewParent = loader.load();
+             AnchorPane.setTopAnchor(viewParent, 0.0);
+            AnchorPane.setBottomAnchor(viewParent, 0.0);
+            AnchorPane.setLeftAnchor(viewParent, 0.0);
+            AnchorPane.setRightAnchor(viewParent, 0.0);
+    
+            contentArea.getChildren().setAll(viewParent);
+
+         } catch (Exception e) {
+            e.printStackTrace();
+         }
+    }
+
+
+
 
     @FXML
     private void showInventory() {

@@ -54,7 +54,7 @@ public class ClientService{
     return repo.findFirstByOrderBySpentAmountDesc();
   }
 
-  public long countClients(){
+  public long getClientCount(){
     return repo.countByDeletedFalseOrDeletedIsNull();
   }
 

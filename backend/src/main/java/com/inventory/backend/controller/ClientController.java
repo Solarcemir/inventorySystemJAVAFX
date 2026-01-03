@@ -47,7 +47,7 @@ public class ClientController {
     }
 
 
-    @GetMapping
+    @GetMapping("/count")
     public long getClientCount(){
         return clientService.getClientCount();
     }
