@@ -1,6 +1,7 @@
 com\inventory\desktop\controller\AnalyticsController$RecentSale.class
 com\inventory\desktop\controller\HomeController.class
 com\inventory\desktop\controller\AnalyticsController$TopProduct.class
+com\inventory\desktop\controller\AnalyticsController$DailyAnalytics.class
 com\inventory\desktop\controller\AnalyticsController$LowStockProduct.class
 com\inventory\desktop\controller\LoginController.class
 com\inventory\desktop\Main.class

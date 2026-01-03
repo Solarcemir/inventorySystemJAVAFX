@@ -12,9 +12,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background: linear-gradient(to bottom, #667eea, #764ba2); -fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.AnalyticsController">
+<ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background: linear-gradient(to bottom, #667eea, #764ba2); -fx-background-color: #a8d2ffff;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.AnalyticsController">
    <content>
-      <VBox alignment="TOP_CENTER" spacing="18.0" style="-fx-background-color: #f8f9fa;">
+      <VBox alignment="TOP_CENTER" spacing="18.0" style="-fx-background-color: #F0FFFF;">
          <padding>
             <Insets bottom="25.0" left="35.0" right="35.0" top="25.0" />
          </padding>
@@ -94,7 +94,7 @@
          </HBox>
          
          <!-- Daily Analytics Table -->
-         <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+         <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: #F0FFFF; -fx-background-radius: 12; -fx-padding: 15;">
             <Label style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Daily Analytics (Last 7 Days)" />
             <TableView fx:id="table_daily_analytics" prefHeight="220.0" minHeight="220.0" prefWidth="780.0" style="-fx-background-radius: 8;">
                <columns>
@@ -111,7 +111,7 @@
          
          <!-- Charts Row -->
          <HBox alignment="CENTER" spacing="20.0">
-            <VBox prefWidth="400.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+            <VBox prefWidth="400.0" spacing="8.0" style="-fx-background-color: #58ffa6ff; -fx-background-radius: 12; -fx-padding: 15;">
                <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Sales Last 7 Days" />
                <BarChart fx:id="chart_sales_by_day" prefHeight="200.0" animated="false">
                   <xAxis>
@@ -123,7 +123,7 @@
                </BarChart>
             </VBox>
             
-            <VBox prefWidth="320.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+            <VBox prefWidth="320.0" spacing="8.0" style="-fx-background-color: #abffffff; -fx-background-radius: 12; -fx-padding: 15;">
                <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Sales by Category" />
                <PieChart fx:id="chart_category" prefHeight="200.0" legendVisible="true" animated="false" />
             </VBox>
@@ -131,7 +131,7 @@
          
          <!-- Tables Row -->
          <HBox alignment="CENTER" spacing="20.0">
-            <VBox prefWidth="360.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+            <VBox prefWidth="360.0" spacing="8.0" style="-fx-background-color: #F0FFFF; -fx-background-radius: 12; -fx-padding: 15;">
                <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Top 5 Products" />
                <TableView fx:id="table_top_products" prefHeight="160.0" minHeight="160.0" style="-fx-background-radius: 8;">
                   <columns>
@@ -142,7 +142,7 @@
                </TableView>
             </VBox>
             
-            <VBox prefWidth="360.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+            <VBox prefWidth="360.0" spacing="8.0" style="-fx-background-color: #F0FFFF; -fx-background-radius: 12; -fx-padding: 15;">
                <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Recent Sales" />
                <TableView fx:id="table_recent_sales" prefHeight="160.0" minHeight="160.0" style="-fx-background-radius: 8;">
                   <columns>
@@ -156,7 +156,7 @@
          </HBox>
          
          <!-- Low Stock Alert -->
-         <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+         <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: #F0FFFF; -fx-background-radius: 12; -fx-padding: 15;">
             <Label style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #e74c3c;" text="Low Stock Alert" />
             <TableView fx:id="table_low_stock" prefHeight="140.0" minHeight="140.0" prefWidth="700.0" style="-fx-background-radius: 8;">
                <columns>
