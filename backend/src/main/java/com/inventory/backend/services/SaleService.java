@@ -29,15 +29,22 @@ public class SaleService {
             throw new RuntimeException("Stock insuficiente. Disponible: " + product.getProductQuantity());
         }
         
-        // Calcular total
+        // Calcular total (precio de venta)
         BigDecimal totalAmount = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+        
+        // Calcular costo y ganancia
+        BigDecimal costAmount = BigDecimal.ZERO;
+        if (product.getCostPrice() != null) {
+            costAmount = product.getCostPrice().multiply(BigDecimal.valueOf(quantity));
+        }
+        BigDecimal profitAmount = totalAmount.subtract(costAmount);
         
         // Reducir inventario
         product.setProductQuantity(product.getProductQuantity() - quantity);
         productRepository.save(product);
         
-        // Crear venta
-        Sale sale = new Sale(product, quantity, totalAmount, LocalDateTime.now());
+        // Crear venta con costo y ganancia
+        Sale sale = new Sale(product, quantity, totalAmount, costAmount, profitAmount, LocalDateTime.now());
         return saleRepository.save(sale);
     }
 

@@ -24,6 +24,7 @@ public class AddProductController {
     @FXML private TextField vendor;
     @FXML private TextField category;
     @FXML private TextField description;
+    @FXML private TextField cost_price;
     @FXML private TextField product_price;
     @FXML private Spinner<Integer> quantity_spinner;
     @FXML private TextField img_url;
@@ -35,7 +36,9 @@ public class AddProductController {
     @FXML private Label product_name_map;
     @FXML private Label vendor_map;
     @FXML private Label category_map;
+    @FXML private Label cost_map;
     @FXML private Label price_map;
+    @FXML private Label profit_map;
     @FXML private Label quantity_map;
     @FXML private Label description_map;
 
@@ -98,23 +101,26 @@ public class AddProductController {
         String provider = vendor.getText();
         String cat = category.getText();
         String desc = description.getText();
+        String costText = cost_price.getText();
         String priceText = product_price.getText();
         int quantity = quantity_spinner.getValue();
         String imagePath = img_url.getText();
 
-        if (name.isEmpty() || priceText.isEmpty()) {
-            showAlert("Missing required fields");
+        if (name.isEmpty() || priceText.isEmpty() || costText.isEmpty()) {
+            showAlert("Missing required fields (Name, Cost Price, Sale Price)");
             return;
         }
         if (quantity < 1) {
             showAlert("Quantity must be at least 1");
             return;
         }
+        BigDecimal costPrice;
         BigDecimal price;
         try {
+            costPrice = new BigDecimal(costText);
             price = new BigDecimal(priceText);
         } catch (NumberFormatException e) {
-            showAlert("Invalid price");
+            showAlert("Invalid price format");
             return;
         }
         
@@ -135,8 +141,8 @@ public class AddProductController {
                 String escapedImagePath = imagePath.replace("\\", "/");
                 
                 String json = String.format(
-                    "{\"productName\":\"%s\",\"provider\":\"%s\",\"category\":\"%s\",\"description\":\"%s\",\"price\":%s,\"productQuantity\":%d,\"imagePath\":\"%s\"}",
-                    escapedName, escapedProvider, escapedCat, escapedDesc, price.toString(), quantity, escapedImagePath
+                    "{\"productName\":\"%s\",\"provider\":\"%s\",\"category\":\"%s\",\"description\":\"%s\",\"costPrice\":%s,\"price\":%s,\"productQuantity\":%d,\"imagePath\":\"%s\"}",
+                    escapedName, escapedProvider, escapedCat, escapedDesc, costPrice.toString(), price.toString(), quantity, escapedImagePath
                 );
                 
                 System.out.println("Sending JSON: " + json);
@@ -164,7 +170,7 @@ public class AddProductController {
                 Platform.runLater(() -> {
                     if (responseCode == 200 || responseCode == 201) {
                         System.out.println("Product saved successfully! Showing popup...");
-                        updatePreview(name, provider, cat, desc, price, quantity, imagePath);
+                        updatePreview(name, provider, cat, desc, costPrice, price, quantity, imagePath);
                         showSuccessPopup();
                         clearForm();
                     } else {
@@ -183,6 +189,7 @@ public class AddProductController {
         vendor.clear();
         category.clear();
         description.clear();
+        cost_price.clear();
         product_price.clear();
         img_url.clear();
         quantity_spinner.getValueFactory().setValue(0);
@@ -209,11 +216,14 @@ public class AddProductController {
         }).start();
     }
 
-    private void updatePreview(String name, String provider, String cat, String desc, BigDecimal price, int quantity, String imagePath) {
+    private void updatePreview(String name, String provider, String cat, String desc, BigDecimal costPrice, BigDecimal price, int quantity, String imagePath) {
         product_name_map.setText(name);
         vendor_map.setText("Vendor: " + provider);
         category_map.setText("Category: " + cat);
-        price_map.setText("Price: $" + price);
+        cost_map.setText("Cost: $" + costPrice);
+        price_map.setText("Sale: $" + price);
+        BigDecimal profit = price.subtract(costPrice);
+        profit_map.setText("Profit: $" + profit + " (" + (costPrice.compareTo(BigDecimal.ZERO) > 0 ? profit.multiply(new BigDecimal(100)).divide(costPrice, 1, java.math.RoundingMode.HALF_UP) : "0") + "%)");
         quantity_map.setText("Quantity: " + quantity);
         description_map.setText("Description: " + desc);
         if (imagePath != null && !imagePath.isEmpty()) {

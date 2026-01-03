@@ -105,6 +105,20 @@ public class MainController {
     @FXML
     private void showAnalytics() {
         System.out.println("Mostrando Analytics");
-        // Lógica para mostrar la pantalla de analytics
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/analytics.fxml"));
+            Parent analyticsParent = loader.load();
+            
+            // Configurar para que ocupe todo el espacio del contentArea
+            AnchorPane.setTopAnchor(analyticsParent, 0.0);
+            AnchorPane.setBottomAnchor(analyticsParent, 0.0);
+            AnchorPane.setLeftAnchor(analyticsParent, 0.0);
+            AnchorPane.setRightAnchor(analyticsParent, 0.0);
+            
+            contentArea.getChildren().setAll(analyticsParent);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

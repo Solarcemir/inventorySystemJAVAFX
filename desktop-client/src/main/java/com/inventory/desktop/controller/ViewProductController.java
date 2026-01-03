@@ -6,10 +6,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -77,6 +83,9 @@ public class ViewProductController {
         sell_button.setOnAction(e -> sellSelectedProduct());
         delete_button.setOnAction(e -> deleteSelectedProduct());
         edit_button.setOnAction(e -> editSelectedProduct());
+        
+        // Click en imagen para ver más grande
+        table_image.setOnMouseClicked(e -> showImagePopup());
 
         // Cargar productos desde el backend
         loadProducts();
@@ -120,6 +129,7 @@ public class ViewProductController {
                                     obj.optString("provider", ""),
                                     obj.optString("category", ""),
                                     obj.optString("description", ""),
+                                    obj.optDouble("costPrice", 0.0),
                                     obj.optDouble("price", 0.0),
                                     obj.optInt("productQuantity", 0),
                                     obj.optString("imagePath", "")
@@ -148,7 +158,7 @@ public class ViewProductController {
         detail_provider.setText("Provider: " + product.getProvider());
         detail_category.setText("Category: " + product.getCategory());
         detail_description.setText("Description: " + product.getDescription());
-        detail_price.setText("Price: $" + String.format("%.2f", product.getPrice()));
+        detail_price.setText("Cost: $" + String.format("%.2f", product.getCostPrice()) + " | Sale: $" + String.format("%.2f", product.getPrice()) + " | Profit: $" + String.format("%.2f", product.getProfit()));
         detail_quantity.setText("Quantity: " + product.getProductQuantity());
 
         // Cargar imagen
@@ -270,7 +280,7 @@ public class ViewProductController {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
         confirmation.setTitle("Delete Product");
         confirmation.setHeaderText("Delete " + selectedProduct.getProductName() + "?");
-        confirmation.setContentText("This action cannot be undone.");
+        confirmation.setContentText("The product will be removed from inventory.\nSales history will be preserved for analytics.");
 
         confirmation.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
@@ -326,5 +336,37 @@ public class ViewProductController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+    
+    private void showImagePopup() {
+        if (selectedProduct == null || table_image.getImage() == null) {
+            return;
+        }
+        
+        Stage popupStage = new Stage();
+        popupStage.initModality(Modality.APPLICATION_MODAL);
+        popupStage.setTitle(selectedProduct.getProductName());
+        
+        ImageView largeImage = new ImageView(table_image.getImage());
+        largeImage.setFitWidth(600);
+        largeImage.setFitHeight(500);
+        largeImage.setPreserveRatio(true);
+        
+        Label nameLabel = new Label(selectedProduct.getProductName());
+        nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        
+        Button closeBtn = new Button("Close");
+        closeBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 10 30;");
+        closeBtn.setOnAction(e -> popupStage.close());
+        
+        VBox layout = new VBox(15);
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(20));
+        layout.setStyle("-fx-background-color: white;");
+        layout.getChildren().addAll(nameLabel, largeImage, closeBtn);
+        
+        Scene scene = new Scene(layout);
+        popupStage.setScene(scene);
+        popupStage.showAndWait();
     }
 }

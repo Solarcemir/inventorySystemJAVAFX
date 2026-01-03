@@ -1,47 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.shape.Line?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.AddProductController">
-   <children>
-      <SplitPane dividerPositions="0.45" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <items>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="404.0" prefWidth="271.0" style="-fx-background-color: linear-gradient(to bottom, #f2faffff, #ffffffff);">
-               <children>
-                  <Line endX="100.0" layoutX="134.0" layoutY="39.0" startX="-100.0" stroke="#1976D2" strokeWidth="2.0" />
-                  <Label layoutX="85.0" layoutY="10.0" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1565C0;" text="Add Product" />
-                  <TextField fx:id="product_name" layoutX="34.0" layoutY="80.0" prefHeight="30.0" prefWidth="201.0" promptText="Product Name" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <TextField fx:id="vendor" layoutX="34.0" layoutY="118.0" prefHeight="30.0" prefWidth="201.0" promptText="Vendor" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <TextField fx:id="category" layoutX="34.0" layoutY="156.0" prefHeight="30.0" prefWidth="201.0" promptText="Category" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <TextField fx:id="description" layoutX="34.0" layoutY="194.0" prefHeight="30.0" prefWidth="201.0" promptText="Description" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <TextField fx:id="product_price" layoutX="34.0" layoutY="232.0" prefHeight="30.0" prefWidth="201.0" promptText="Price (e.g., 99.99)" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <Label layoutX="34.0" layoutY="273.0" style="-fx-font-weight: bold; -fx-text-fill: #1565C0;" text="Quantity:" />
-                  <Spinner fx:id="quantity_spinner" editable="true" layoutX="159.0" layoutY="270.0" prefHeight="30.0" prefWidth="75.0" style="-fx-background-radius: 5;" />
-                  <TextField fx:id="img_url" layoutX="34.0" layoutY="310.0" prefHeight="30.0" prefWidth="142.0" promptText="Image Path" style="-fx-background-radius: 5; -fx-border-color: #64B5F6; -fx-border-radius: 5;" />
-                  <Button fx:id="button_browse" layoutX="180.0" layoutY="310.0" mnemonicParsing="false" prefHeight="30.0" style="-fx-background-color: #42A5F5; -fx-text-fill: white; -fx-background-radius: 5; -fx-cursor: hand;" text="Browse" />
-                  <Button fx:id="submitButton" layoutX="73.0" layoutY="355.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="121.0" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="SUBMIT" />
-               </children>
-            </AnchorPane>
-          <AnchorPane prefHeight="404.0" prefWidth="318.0" style="-fx-background-color:linear-gradient(to bottom, #f2faffff, #ffffffff);">
-               <children>
-                  <Label layoutX="130.0" layoutY="5.0" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #060606ff;" text="Preview" />
-                  <ImageView fx:id="load_image" fitHeight="260.0" fitWidth="305.0" layoutX="7.0" layoutY="30.0" pickOnBounds="true" preserveRatio="false" style="-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2);" />
-                  <Label fx:id="product_name_map" layoutX="15.0" layoutY="300.0" prefWidth="290.0" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #100f0fff; -fx-alignment: center;" text="Product Name" />
-                  <Label fx:id="vendor_map" layoutX="15.0" layoutY="325.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Vendor: " />
-                  <Label fx:id="category_map" layoutX="15.0" layoutY="345.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Category:" />
-                  <Label fx:id="description_map" layoutX="15.0" layoutY="365.0" prefWidth="290.0" style="-fx-font-size: 12px; -fx-text-fill: #424242;" text="Description:" />
-                  <Label fx:id="price_map" layoutX="15.0" layoutY="385.0" prefWidth="290.0" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2E7D32;" text="Price:" />
-                  <Label fx:id="quantity_map" layoutX="15.0" layoutY="405.0" prefWidth="290.0" style="-fx-font-size: 13px; -fx-text-fill: #424242;" text="Quantity:" />
-               </children>
-            </AnchorPane>
-        </items>
-      </SplitPane>
-   </children>
-</AnchorPane>
+<SplitPane dividerPositions="0.45" style="-fx-background-color: #f8f9fa;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.inventory.desktop.controller.AddProductController">
+   <!-- Panel izquierdo: Formulario -->
+   <VBox alignment="TOP_CENTER" spacing="12.0" style="-fx-background-color: white;">
+      <padding>
+         <Insets bottom="20.0" left="25.0" right="25.0" top="20.0" />
+      </padding>
+      
+      <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Add Product" />
+      
+      <TextField fx:id="product_name" prefHeight="35.0" promptText="Product Name" style="-fx-background-radius: 8; -fx-border-color: #3498db; -fx-border-radius: 8; -fx-padding: 8;" />
+      <TextField fx:id="vendor" prefHeight="35.0" promptText="Vendor / Provider" style="-fx-background-radius: 8; -fx-border-color: #3498db; -fx-border-radius: 8; -fx-padding: 8;" />
+      <TextField fx:id="category" prefHeight="35.0" promptText="Category" style="-fx-background-radius: 8; -fx-border-color: #3498db; -fx-border-radius: 8; -fx-padding: 8;" />
+      <TextField fx:id="description" prefHeight="35.0" promptText="Description" style="-fx-background-radius: 8; -fx-border-color: #3498db; -fx-border-radius: 8; -fx-padding: 8;" />
+      
+      <!-- Precios -->
+      <HBox alignment="CENTER" spacing="10.0">
+         <VBox spacing="3.0">
+            <Label style="-fx-font-size: 11px; -fx-text-fill: #e74c3c; -fx-font-weight: bold;" text="Cost Price" />
+            <TextField fx:id="cost_price" prefHeight="35.0" prefWidth="100.0" promptText="0.00" style="-fx-background-radius: 8; -fx-border-color: #e74c3c; -fx-border-radius: 8; -fx-padding: 8;" />
+         </VBox>
+         <VBox spacing="3.0">
+            <Label style="-fx-font-size: 11px; -fx-text-fill: #27ae60; -fx-font-weight: bold;" text="Sale Price" />
+            <TextField fx:id="product_price" prefHeight="35.0" prefWidth="100.0" promptText="0.00" style="-fx-background-radius: 8; -fx-border-color: #27ae60; -fx-border-radius: 8; -fx-padding: 8;" />
+         </VBox>
+      </HBox>
+      
+      <HBox alignment="CENTER" spacing="15.0">
+         <Label style="-fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Quantity:" />
+         <Spinner fx:id="quantity_spinner" editable="true" prefHeight="35.0" prefWidth="90.0" style="-fx-background-radius: 8;" />
+      </HBox>
+      
+      <HBox alignment="CENTER" spacing="10.0">
+         <TextField fx:id="img_url" prefHeight="35.0" prefWidth="150.0" promptText="Image Path" style="-fx-background-radius: 8; -fx-border-color: #95a5a6; -fx-border-radius: 8; -fx-padding: 8;" />
+         <Button fx:id="button_browse" mnemonicParsing="false" prefHeight="35.0" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;" text="Browse" />
+      </HBox>
+      
+      <Button fx:id="submitButton" mnemonicParsing="false" prefHeight="40.0" prefWidth="150.0" style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="SUBMIT" />
+   </VBox>
+   
+   <!-- Panel derecho: Preview -->
+   <VBox alignment="TOP_CENTER" spacing="10.0" style="-fx-background-color: #ecf0f1;">
+      <padding>
+         <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+      </padding>
+      
+      <Label style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Preview" />
+      
+      <VBox alignment="CENTER" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 10;">
+         <ImageView fx:id="load_image" fitHeight="200.0" fitWidth="280.0" pickOnBounds="true" preserveRatio="true" />
+      </VBox>
+      
+      <VBox spacing="5.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 15;">
+         <Label fx:id="product_name_map" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" text="Product Name" />
+         <Label fx:id="vendor_map" style="-fx-font-size: 12px; -fx-text-fill: #7f8c8d;" text="Vendor: " />
+         <Label fx:id="category_map" style="-fx-font-size: 12px; -fx-text-fill: #7f8c8d;" text="Category:" />
+         <Label fx:id="description_map" style="-fx-font-size: 11px; -fx-text-fill: #95a5a6;" text="Description:" wrapText="true" />
+         <HBox spacing="20.0">
+            <Label fx:id="cost_map" style="-fx-font-size: 13px; -fx-text-fill: #e74c3c;" text="Cost: " />
+            <Label fx:id="price_map" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #27ae60;" text="Price: " />
+         </HBox>
+         <Label fx:id="profit_map" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #8e44ad;" text="Profit: " />
+         <Label fx:id="quantity_map" style="-fx-font-size: 12px; -fx-text-fill: #34495e;" text="Quantity:" />
+      </VBox>
+   </VBox>
+</SplitPane>

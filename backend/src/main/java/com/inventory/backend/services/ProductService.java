@@ -16,7 +16,13 @@ public class ProductService {
     this.repo = repo;
   }
   
-  public List <Product> getAllProducts(){
+  // Obtener solo productos activos (no eliminados)
+  public List<Product> getAllProducts(){
+    return repo.findByDeletedFalseOrDeletedIsNull();
+  }
+  
+  // Obtener todos los productos incluyendo eliminados (para analytics)
+  public List<Product> getAllProductsIncludingDeleted(){
     return repo.findAll();
   }
 
@@ -24,14 +30,19 @@ public class ProductService {
     if(p.getPrice() == null || p.getPrice().compareTo(java.math.BigDecimal.ZERO) < 0) {
        throw new IllegalArgumentException("El precio es negativo error en ProductService.java");
     }
-    else {
-      return repo.save(p);
-    }
+    p.setDeleted(false); // Asegurar que productos nuevos no estén eliminados
+    return repo.save(p);
   }
 
+  // Soft delete - marcar como eliminado pero no borrar de la base de datos
   public void deleteProductbyId(Long id){
-    if(repo.existsById(id))
-    repo.deleteById(id);
+    if(repo.existsById(id)) {
+      Product product = repo.findById(id).orElse(null);
+      if (product != null) {
+        product.setDeleted(true);
+        repo.save(product);
+      }
+    }
   }
 
   public Product getProductbyId(Long id){
@@ -55,7 +66,13 @@ public class ProductService {
     return repo.save(product);
   }
 
-   public long getProductCount(){
+  // Contar solo productos activos
+  public long getProductCount(){
+    return repo.countByDeletedFalseOrDeletedIsNull();
+  }
+  
+  // Contar todos los productos incluyendo eliminados
+  public long getTotalProductCount(){
     return repo.count();
-   }
+  }
 }

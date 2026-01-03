@@ -8,24 +8,33 @@ public class Product {
     private final StringProperty provider;
     private final StringProperty category;
     private final StringProperty description;
-    private final DoubleProperty price;
+    private final DoubleProperty price;        // Precio de venta
+    private final DoubleProperty costPrice;    // Precio del proveedor
     private final IntegerProperty productQuantity;
     private final StringProperty imagePath;
 
     public Product() {
-        this(0L, "", "", "", "", 0.0, 0, "");
+        this(0L, "", "", "", "", 0.0, 0.0, 0, "");
     }
 
+    // Constructor principal: costPrice primero, luego price (sale price)
     public Product(Long productId, String productName, String provider, String category, 
-                   String description, Double price, Integer productQuantity, String imagePath) {
+                   String description, Double costPrice, Double price, Integer productQuantity, String imagePath) {
         this.productId = new SimpleLongProperty(productId);
         this.productName = new SimpleStringProperty(productName);
         this.provider = new SimpleStringProperty(provider);
         this.category = new SimpleStringProperty(category);
         this.description = new SimpleStringProperty(description);
         this.price = new SimpleDoubleProperty(price);
+        this.costPrice = new SimpleDoubleProperty(costPrice);
         this.productQuantity = new SimpleIntegerProperty(productQuantity);
         this.imagePath = new SimpleStringProperty(imagePath);
+    }
+    
+    // Constructor sin costPrice para compatibilidad
+    public Product(Long productId, String productName, String provider, String category, 
+                   String description, Double price, Integer productQuantity, String imagePath) {
+        this(productId, productName, provider, category, description, 0.0, price, productQuantity, imagePath);
     }
 
     // Product ID
@@ -53,10 +62,18 @@ public class Product {
     public void setDescription(String value) { description.set(value); }
     public StringProperty descriptionProperty() { return description; }
 
-    // Price
+    // Price (Precio de venta)
     public double getPrice() { return price.get(); }
     public void setPrice(double value) { price.set(value); }
     public DoubleProperty priceProperty() { return price; }
+
+    // Cost Price (Precio del proveedor)
+    public double getCostPrice() { return costPrice.get(); }
+    public void setCostPrice(double value) { costPrice.set(value); }
+    public DoubleProperty costPriceProperty() { return costPrice; }
+    
+    // Profit por unidad
+    public double getProfit() { return price.get() - costPrice.get(); }
 
     // Quantity
     public int getProductQuantity() { return productQuantity.get(); }

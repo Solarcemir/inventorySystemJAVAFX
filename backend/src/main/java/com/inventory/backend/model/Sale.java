@@ -17,6 +17,12 @@ public class Sale {
     private int quantity;
     
     private BigDecimal totalAmount;
+    
+    @Column(name = "cost_amount")
+    private BigDecimal costAmount;  // Costo total de la venta (costPrice * quantity)
+    
+    @Column(name = "profit_amount")
+    private BigDecimal profitAmount;  // Ganancia de la venta (totalAmount - costAmount)
 
     private LocalDateTime saleDate;
 
@@ -28,6 +34,15 @@ public class Sale {
         this.totalAmount = totalAmount;
         this.saleDate = saleDate;
     }
+    
+    public Sale(Product product, int quantity, BigDecimal totalAmount, BigDecimal costAmount, BigDecimal profitAmount, LocalDateTime saleDate) {
+        this.product = product;
+        this.quantity = quantity;
+        this.totalAmount = totalAmount;
+        this.costAmount = costAmount;
+        this.profitAmount = profitAmount;
+        this.saleDate = saleDate;
+    }
 
     public Long getId() { return id; }
     public Product getProduct() { return product; }
@@ -36,6 +51,10 @@ public class Sale {
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getCostAmount() { return costAmount; }
+    public void setCostAmount(BigDecimal costAmount) { this.costAmount = costAmount; }
+    public BigDecimal getProfitAmount() { return profitAmount; }
+    public void setProfitAmount(BigDecimal profitAmount) { this.profitAmount = profitAmount; }
     public LocalDateTime getSaleDate() { return saleDate; }
     public void setSaleDate(LocalDateTime saleDate) { this.saleDate = saleDate; }
 }

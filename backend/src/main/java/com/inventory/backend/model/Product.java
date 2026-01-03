@@ -25,10 +25,16 @@ public class Product {
 
     private BigDecimal price;
 
+    @Column(name = "cost_price")
+    private BigDecimal costPrice;
+
     @Column(name = "image_path")
     private String imagePath;
 
     private String description;
+
+    @Column(name = "deleted")
+    private Boolean deleted = false;
 
     // 🔹 Constructor vacío (OBLIGATORIO para JPA)
     public Product() {
@@ -83,6 +89,14 @@ public class Product {
         this.price = price;
     }
 
+    public BigDecimal getCostPrice() {
+        return costPrice;
+    }
+
+    public void setCostPrice(BigDecimal costPrice) {
+        this.costPrice = costPrice;
+    }
+
     public String getImagePath() {
         return imagePath;
     }
@@ -97,5 +111,13 @@ public class Product {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Boolean getDeleted() {
+        return deleted != null ? deleted : false;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
     }
 }
