@@ -76,7 +76,7 @@ public class MainController {
          System.out.println("Mostrando Clientes");
          try {
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(null));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/clients.fxml"));
             Parent viewParent = loader.load();
              AnchorPane.setTopAnchor(viewParent, 0.0);
             AnchorPane.setBottomAnchor(viewParent, 0.0);

@@ -14,9 +14,24 @@ public class SaleController {
         this.saleService = saleService;
     }
 
+    /**
+     * Crear venta SIN cliente (compatibilidad con versión anterior)
+     */
     @PostMapping
     public Sale createSale(@RequestParam Long productId, @RequestParam int quantity) {
         return saleService.createSale(productId, quantity);
+    }
+    
+    /**
+     * Crear venta CON cliente - actualiza automáticamente el spentAmount del cliente
+     * Ejemplo: POST /api/sales/with-client?productId=1&clientId=1&quantity=2
+     */
+    @PostMapping("/with-client")
+    public Sale createSaleWithClient(
+            @RequestParam Long productId, 
+            @RequestParam Long clientId, 
+            @RequestParam int quantity) {
+        return saleService.createSaleWithClient(productId, clientId, quantity);
     }
 
     @GetMapping("/count")
@@ -32,5 +47,23 @@ public class SaleController {
     @GetMapping
     public List<Sale> getAllSales() {
         return saleService.getAllSales();
+    }
+    
+    /**
+     * Obtener historial de compras de un cliente
+     * Ejemplo: GET /api/sales/client/1
+     */
+    @GetMapping("/client/{clientId}")
+    public List<Sale> getSalesByClient(@PathVariable Long clientId) {
+        return saleService.getSalesByClient(clientId);
+    }
+    
+    /**
+     * Contar ventas de un cliente
+     * Ejemplo: GET /api/sales/client/1/count
+     */
+    @GetMapping("/client/{clientId}/count")
+    public long getSalesCountByClient(@PathVariable Long clientId) {
+        return saleService.getSalesCountByClient(clientId);
     }
 }

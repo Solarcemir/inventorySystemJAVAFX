@@ -60,9 +60,12 @@ public class ProductService {
     //update this product
     product.setProductName(productDetails.getProductName());
     product.setProvider(productDetails.getProvider());
+    product.setCategory(productDetails.getCategory());
+    product.setDescription(productDetails.getDescription());
+    product.setCostPrice(productDetails.getCostPrice());
     product.setPrice(productDetails.getPrice());
     product.setProductQuantity(productDetails.getProductQuantity());
-    product.setDescription(productDetails.getDescription());
+    product.setImagePath(productDetails.getImagePath());
     return repo.save(product);
   }
 
