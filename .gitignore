@@ -1,2 +1,61 @@
+# Environment variables y archivos privados
 .env
 instructions.md
+
+# Maven/Java build outputs
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Maven archiver y metadata
+**/maven-archiver/
+**/maven-status/
+
+# Package Files
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Installer files - contiene JRE, PostgreSQL, binarios pesados
+installer/
+dist/
+
+# Database backups - archivos grandes, no necesarios en git
+database-backup.sql
+**/database-backup.sql
+
+# Scripts de preparación del instalador
+prepare-installer.ps1
+build-distribution.ps1
+
+# Documentación de deployment (opcional, comentar si quieres incluirlo)
+DEPLOYMENT.md
+
+# IDEs
+.idea/
+*.iml
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
