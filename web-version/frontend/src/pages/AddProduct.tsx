@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { productService } from '../services/productService';
-import { logService } from '../services/logService';
+import { imageService } from '../services/imageService';
+import { getErrorMessage } from '../services/api';
 import { Product } from '../types';
 
 const emptyProduct: Product = {
@@ -20,8 +21,35 @@ export default function AddProduct() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [imageList, setImageList] = useState<string[]>([]);
+  const [folderPath, setFolderPath] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   const profit = form.price - form.costPrice;
+  const previewSrc = imageService.toSrc(form.imagePath);
+
+  useEffect(() => {
+    imageService.list().then(setImageList).catch(() => {});
+    imageService.getFolder().then(setFolderPath).catch(() => {});
+  }, []);
+
+  const refreshImages = () => imageService.list().then(setImageList).catch(() => {});
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const filename = await imageService.upload(file);
+      setForm((f) => ({ ...f, imagePath: filename }));
+      setImageList((prev) => prev.includes(filename) ? prev : [...prev, filename].sort());
+    } catch (err: any) {
+      setError('Upload failed: ' + (err?.message || 'unknown error'));
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -33,12 +61,11 @@ export default function AddProduct() {
     setSubmitting(true);
     try {
       await productService.create(form);
-      await logService.log('ADD_PRODUCT', `Added product "${form.productName}" (Qty: ${form.productQuantity}, Price: $${form.price.toFixed(2)})`);
       setSuccess(true);
       setForm(emptyProduct);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create product');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to create product'));
     } finally {
       setSubmitting(false);
     }
@@ -98,16 +125,34 @@ export default function AddProduct() {
             </div>
 
             <div className="form-group">
-              <label>Image Path</label>
-              <div className="image-input-row">
-                <input type="text" value={form.imagePath || ''} onChange={(e) => setForm({ ...form, imagePath: e.target.value })} placeholder="Select product image..." readOnly />
-                <label className="btn btn-browse">
-                  Browse
-                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) setForm({ ...form, imagePath: `product-images/${file.name}` });
-                  }} />
+              <label>Product Image</label>
+              <div className="image-pick-row">
+                {/* Browse button — opens OS file picker and uploads automatically */}
+                <label className={`btn btn-browse ${uploading ? 'btn-disabled' : ''}`}>
+                  {uploading ? 'Uploading...' : '📁 Browse...'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploading} onChange={handleFilePick} />
                 </label>
+                {/* Dropdown of already-uploaded images */}
+                <select
+                  value={form.imagePath}
+                  onChange={(e) => setForm({ ...form, imagePath: e.target.value })}
+                  className="image-select"
+                >
+                  <option value="">— select existing —</option>
+                  {imageList.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn-sm" onClick={refreshImages} title="Refresh list">↺</button>
+              </div>
+              {form.imagePath && (
+                <div style={{ marginTop: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Selected: <strong>{form.imagePath}</strong>
+                  <button type="button" className="btn-clear-image" onClick={() => setForm(f => ({ ...f, imagePath: '' }))}>×</button>
+                </div>
+              )}
+              <div className="image-folder-hint" style={{ marginTop: '0.4rem' }}>
+                Folder: <code>{folderPath || 'Documents\\CFT-Electronic\\images\\'}</code>
               </div>
             </div>
 
@@ -124,17 +169,18 @@ export default function AddProduct() {
           <h2>Live Preview</h2>
           <div className="preview-card">
             <div className="preview-image">
-              {form.imagePath ? (
-                <img src={form.imagePath} alt="Preview" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              {previewSrc ? (
+                <img src={previewSrc} alt="Preview" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               ) : (
                 <div className="preview-placeholder">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <small>Select an image to preview</small>
                 </div>
               )}
             </div>
             <div className="preview-details">
               <h3>{form.productName || 'Product Name'}</h3>
-              <p className="preview-meta">{form.provider || 'Vendor'} &middot; {form.category || 'Category'}{form.location ? ` &middot; ${form.location}` : ''}</p>
+              <p className="preview-meta">{form.provider || 'Vendor'} &middot; {form.category || 'Category'}{form.location ? ` · ${form.location}` : ''}</p>
               <p className="preview-desc">{form.description || 'Description will appear here...'}</p>
               <div className="preview-prices">
                 <div className="preview-price cost">

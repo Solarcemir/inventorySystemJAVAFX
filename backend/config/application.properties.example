@@ -1,0 +1,7 @@
+# Copy this file to backend/config/application.properties and fill in the values.
+# That copy is ignored by git, so the password never reaches GitHub.
+#
+# Values: Supabase Dashboard > Connect > Session pooler.
+spring.datasource.url=jdbc:postgresql://YOUR-POOLER-HOST.pooler.supabase.com:5432/postgres?sslmode=require
+spring.datasource.username=postgres.YOUR-PROJECT-REF
+spring.datasource.password=YOUR-DATABASE-PASSWORD

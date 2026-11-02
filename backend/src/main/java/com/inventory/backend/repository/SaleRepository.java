@@ -20,4 +20,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     // Contar ventas por cliente
     long countByClient(Client client);
     long countByClientId(Long clientId);
+
+    // Ventas generadas por una factura específica
+    List<Sale> findByInvoiceId(Long invoiceId);
 }

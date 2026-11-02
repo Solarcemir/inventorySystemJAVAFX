@@ -1,5 +1,7 @@
 package com.inventory.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import com.inventory.backend.auth.Views;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,15 +23,21 @@ public class Sale {
 
     private int quantity;
     
+    @JsonView(Views.Admin.class)
     private BigDecimal totalAmount;
-    
+
     @Column(name = "cost_amount")
+    @JsonView(Views.Admin.class)
     private BigDecimal costAmount;  // Costo total de la venta (costPrice * quantity)
-    
+
     @Column(name = "profit_amount")
+    @JsonView(Views.Admin.class)
     private BigDecimal profitAmount;  // Ganancia de la venta (totalAmount - costAmount)
 
     private LocalDateTime saleDate;
+
+    @Column(name = "invoice_id")
+    private Long invoiceId;
 
     public Sale() {}
 
@@ -75,4 +83,6 @@ public class Sale {
     public void setProfitAmount(BigDecimal profitAmount) { this.profitAmount = profitAmount; }
     public LocalDateTime getSaleDate() { return saleDate; }
     public void setSaleDate(LocalDateTime saleDate) { this.saleDate = saleDate; }
+    public Long getInvoiceId() { return invoiceId; }
+    public void setInvoiceId(Long invoiceId) { this.invoiceId = invoiceId; }
 }

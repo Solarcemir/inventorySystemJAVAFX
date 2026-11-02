@@ -6,13 +6,17 @@ export const authService = {
     const response = await api.post<LoginResponse>('/api/login', { username, password });
     return response.data;
   },
+
+  logout: async (): Promise<void> => {
+    await api.post('/api/logout');
+  },
 };
 
 // Helper to get current user info from sessionStorage
 export function getCurrentUser() {
   return {
     username: sessionStorage.getItem('username') || '',
-    role: sessionStorage.getItem('role') || 'ADMIN',
+    role: sessionStorage.getItem('role') || 'SELLER',
   };
 }
 

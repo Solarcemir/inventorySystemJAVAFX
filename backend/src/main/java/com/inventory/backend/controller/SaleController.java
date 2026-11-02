@@ -1,5 +1,6 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.model.Sale;
 import com.inventory.backend.services.SaleService;
 import org.springframework.web.bind.annotation.*;
@@ -65,5 +66,15 @@ public class SaleController {
     @GetMapping("/client/{clientId}/count")
     public long getSalesCountByClient(@PathVariable Long clientId) {
         return saleService.getSalesCountByClient(clientId);
+    }
+
+    /**
+     * Eliminar una venta y devolver la cantidad al inventario
+     * Ejemplo: DELETE /api/sales/5
+     */
+    @AdminOnly
+    @DeleteMapping("/{id}")
+    public void deleteSale(@PathVariable Long id) {
+        saleService.deleteSale(id);
     }
 }

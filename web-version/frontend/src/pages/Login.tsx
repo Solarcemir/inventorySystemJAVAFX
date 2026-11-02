@@ -1,6 +1,5 @@
 import { useState, FormEvent } from 'react';
 import { authService } from '../services/authService';
-import { logService } from '../services/logService';
 
 interface LoginProps {
   onLogin: () => void;
@@ -23,7 +22,6 @@ export default function Login({ onLogin }: LoginProps) {
         sessionStorage.setItem('username', result.username);
         sessionStorage.setItem('role', result.role);
         sessionStorage.setItem('userId', String(result.id));
-        await logService.log('LOGIN', `User "${result.username}" logged in (${result.role})`);
         onLogin();
       } else {
         setError('Invalid username or password');

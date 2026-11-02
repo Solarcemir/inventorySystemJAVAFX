@@ -1,13 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { isAdmin } from '../services/authService';
+import { authService, getCurrentUser, isAdmin } from '../services/authService';
 
 export default function Layout() {
   const navigate = useNavigate();
   const admin = isAdmin();
-  const username = sessionStorage.getItem('username') || '';
-  const role = sessionStorage.getItem('role') || 'ADMIN';
+  const { username, role } = getCurrentUser();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.logout().catch(() => {});
     sessionStorage.clear();
     navigate('/login');
     window.location.reload();

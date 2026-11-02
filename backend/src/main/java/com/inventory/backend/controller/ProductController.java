@@ -1,5 +1,6 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.model.*;
 import com.inventory.backend.services.ProductService;
 
@@ -33,17 +34,20 @@ public class ProductController {
   }
 
   //entinty for mapping for POST
+  @AdminOnly
   @PostMapping
   public Product createProduct(@RequestBody Product p) {
     return ProductService.createProduct(p);
   }
-  
+
 // modify
+  @AdminOnly
   @PutMapping("/{id}")
   public Product update(@PathVariable Long id,@RequestBody Product p){
     return ProductService.updateProduct(id, p);
   }
 
+  @AdminOnly
   @DeleteMapping("/{id}")
   public void delete(@PathVariable Long id){
     ProductService.deleteProductbyId(id);

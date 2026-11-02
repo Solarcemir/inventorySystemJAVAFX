@@ -2,6 +2,22 @@
 .env
 instructions.md
 
+# Credenciales reales de la base de datos - NUNCA subir
+backend/config/application.properties
+backend/src/main/resources/application-supabase.properties
+**/application-local.properties
+
+# Notas del negocio y fotos de productos (datos locales)
+desktop-client/notes.txt
+**/product-images/
+
+# Frontend
+**/node_modules/
+web-version/frontend/dist/
+
+# Bundle generado por `npm run build` dentro de Spring Boot
+backend/src/main/resources/static/
+
 # Maven/Java build outputs
 **/target/
 *.class
@@ -20,8 +36,16 @@ instructions.md
 *.tar.gz
 *.rar
 
-# Installer files - contiene JRE, PostgreSQL, binarios pesados
-installer/
+# Installer files - contiene JRE, binarios pesados y la config con credenciales.
+# Solo se versionan el script de build, el .iss y los scripts que usa el instalador.
+installer/*
+!installer/build.bat
+!installer/setup.iss
+!installer/scripts/
+installer/scripts/*
+!installer/scripts/start.vbs
+!installer/scripts/stop.bat
+!installer/scripts/info.bat
 dist/
 
 # Database backups - archivos grandes, no necesarios en git

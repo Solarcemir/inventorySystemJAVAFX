@@ -1,57 +1,53 @@
 import { useEffect, useState, useMemo } from 'react';
 import { saleService } from '../services/saleService';
+import { calendarNoteService, CalendarNote } from '../services/calendarNoteService';
 import { isAdmin } from '../services/authService';
 import { Sale } from '../types';
 
-interface CalendarEvent {
-  id: string;
-  text: string;
-}
-
-type EventsMap = Record<string, CalendarEvent[]>; // key: "YYYY-MM-DD"
-
-const EVENTS_KEY = 'cft-calendar-events';
-
-function loadEvents(): EventsMap {
-  try {
-    return JSON.parse(localStorage.getItem(EVENTS_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function saveEvents(events: EventsMap) {
-  localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
-}
+type NotesMap = Record<string, CalendarNote[]>; // key: "YYYY-MM-DD"
 
 export default function Calendar() {
   const admin = isAdmin();
   const [sales, setSales] = useState<Sale[]>([]);
+  const [notes, setNotes] = useState<NotesMap>({});
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<EventsMap>(loadEvents);
 
-  // Event modal state
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [newEventText, setNewEventText] = useState('');
+  const [newNoteText, setNewNoteText] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    try { setSales(await saleService.getAll()); } catch (err) { console.error(err); } finally { setLoading(false); }
+    try {
+      const [s, allNotes] = await Promise.all([
+        saleService.getAll(),
+        calendarNoteService.getAll(),
+      ]);
+      setSales(s);
+      // Group notes by dateKey
+      const map: NotesMap = {};
+      allNotes.forEach((n) => {
+        if (!map[n.dateKey]) map[n.dateKey] = [];
+        map[n.dateKey].push(n);
+      });
+      setNotes(map);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
 
   const getDateKey = (day: number) =>
     `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-  // Group sales by day
   const salesByDay = useMemo(() => {
     const map: Record<number, { count: number; total: number }> = {};
     sales.forEach((s) => {
@@ -60,7 +56,7 @@ export default function Calendar() {
         const day = d.getDate();
         if (!map[day]) map[day] = { count: 0, total: 0 };
         map[day].count += 1;
-        map[day].total += Number(s.totalAmount);
+        map[day].total += Number(s.totalAmount || 0);
       }
     });
     return map;
@@ -73,53 +69,57 @@ export default function Calendar() {
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const goToday = () => setCurrentDate(new Date());
 
-  const handleAddEvent = () => {
-    if (!newEventText.trim() || selectedDay === null) return;
+  const handleAddNote = async () => {
+    if (!newNoteText.trim() || selectedDay === null) return;
     const key = getDateKey(selectedDay);
-    const updated = { ...events };
-    if (!updated[key]) updated[key] = [];
-    updated[key].push({ id: Date.now().toString(), text: newEventText.trim() });
-    setEvents(updated);
-    saveEvents(updated);
-    setNewEventText('');
+    try {
+      const created = await calendarNoteService.create(key, newNoteText.trim());
+      setNotes((prev) => ({ ...prev, [key]: [...(prev[key] || []), created] }));
+      setNewNoteText('');
+    } catch (err) {
+      console.error('Failed to save note', err);
+    }
   };
 
-  const handleDeleteEvent = (day: number, eventId: string) => {
-    const key = getDateKey(day);
-    const updated = { ...events };
-    updated[key] = (updated[key] || []).filter((e) => e.id !== eventId);
-    if (updated[key].length === 0) delete updated[key];
-    setEvents(updated);
-    saveEvents(updated);
+  const handleDeleteNote = async (dateKey: string, noteId: number) => {
+    try {
+      await calendarNoteService.delete(noteId);
+      setNotes((prev) => ({
+        ...prev,
+        [dateKey]: (prev[dateKey] || []).filter((n) => n.id !== noteId),
+      }));
+    } catch (err) {
+      console.error('Failed to delete note', err);
+    }
   };
 
   const cells = [];
   for (let i = 0; i < firstDayOfWeek; i++) cells.push(<div key={`empty-${i}`} className="cal-cell empty" />);
   for (let day = 1; day <= daysInMonth; day++) {
     const info = salesByDay[day];
-    const dayEvents = events[getDateKey(day)] || [];
+    const dayNotes = notes[getDateKey(day)] || [];
     const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
     cells.push(
       <div
         key={day}
-        className={`cal-cell ${isToday ? 'today' : ''} ${info ? 'has-sales' : ''} ${dayEvents.length > 0 ? 'has-events' : ''}`}
-        onClick={() => { setSelectedDay(day); setNewEventText(''); }}
+        className={`cal-cell ${isToday ? 'today' : ''} ${info ? 'has-sales' : ''} ${dayNotes.length > 0 ? 'has-events' : ''}`}
+        onClick={() => { setSelectedDay(day); setNewNoteText(''); }}
       >
         <span className="cal-day">{day}</span>
         {info && (
           <div className="cal-info">
             <span className="cal-count">{info.count} sale{info.count > 1 ? 's' : ''}</span>
-            <span className="cal-total">${info.total.toFixed(0)}</span>
+            {admin && <span className="cal-total">${info.total.toFixed(0)}</span>}
           </div>
         )}
-        {dayEvents.length > 0 && (
+        {dayNotes.length > 0 && (
           <div className="cal-events-preview">
-            {dayEvents.slice(0, 2).map((ev) => (
-              <span key={ev.id} className="cal-event-dot" title={ev.text}>
-                {ev.text.length > 12 ? ev.text.slice(0, 12) + '…' : ev.text}
+            {dayNotes.slice(0, 2).map((n) => (
+              <span key={n.id} className="cal-event-dot" title={n.text}>
+                {n.text.length > 12 ? n.text.slice(0, 12) + '…' : n.text}
               </span>
             ))}
-            {dayEvents.length > 2 && <span className="cal-event-more">+{dayEvents.length - 2}</span>}
+            {dayNotes.length > 2 && <span className="cal-event-more">+{dayNotes.length - 2}</span>}
           </div>
         )}
       </div>
@@ -161,45 +161,48 @@ export default function Calendar() {
         {cells}
       </div>
 
-      {/* Day Detail Modal */}
       {selectedDay !== null && (
         <div className="modal-overlay" onClick={() => setSelectedDay(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{monthName.split(' ')[0]} {selectedDay}, {year}</h2>
 
-            {/* Sales info for this day */}
-            {salesByDay[selectedDay] && (
+            {/* Revenue — admin only */}
+            {admin && salesByDay[selectedDay] && (
               <div className="cal-day-sales-info">
                 <strong>{salesByDay[selectedDay].count}</strong> sale{salesByDay[selectedDay].count > 1 ? 's' : ''} — Revenue: <strong className="text-accent">${salesByDay[selectedDay].total.toFixed(2)}</strong>
               </div>
             )}
+            {/* Seller: show sale count only, no revenue */}
+            {!admin && salesByDay[selectedDay] && (
+              <div className="cal-day-sales-info">
+                <strong>{salesByDay[selectedDay].count}</strong> sale{salesByDay[selectedDay].count > 1 ? 's' : ''} this day
+              </div>
+            )}
 
-            {/* Events */}
             <h3 style={{ fontSize: '0.95rem', margin: '1rem 0 0.5rem' }}>Events & Notes</h3>
-            {(events[getDateKey(selectedDay)] || []).length === 0 ? (
-              <p style={{ color: '#999', fontSize: '0.85rem', marginBottom: '0.75rem' }}>No events for this day.</p>
+            {(notes[getDateKey(selectedDay)] || []).length === 0 ? (
+              <p style={{ color: '#999', fontSize: '0.85rem', marginBottom: '0.75rem' }}>No notes for this day.</p>
             ) : (
               <div className="cal-day-events">
-                {(events[getDateKey(selectedDay)] || []).map((ev) => (
-                  <div key={ev.id} className="cal-day-event">
-                    <span>{ev.text}</span>
-                    <button className="cal-event-delete" onClick={() => handleDeleteEvent(selectedDay, ev.id)}>&times;</button>
+                {(notes[getDateKey(selectedDay)] || []).map((n) => (
+                  <div key={n.id} className="cal-day-event">
+                    <span>{n.text}</span>
+                    <button className="cal-event-delete" onClick={() => handleDeleteNote(getDateKey(selectedDay), n.id)}>&times;</button>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Add event form */}
             <div className="cal-add-event">
               <input
                 type="text"
-                placeholder="Add an event or note..."
-                value={newEventText}
-                onChange={(e) => setNewEventText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAddEvent(); }}
+                placeholder="Add a note..."
+                value={newNoteText}
+                onChange={(e) => setNewNoteText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddNote(); }}
                 autoFocus
               />
-              <button className="btn btn-primary" onClick={handleAddEvent} disabled={!newEventText.trim()}>Add</button>
+              <button className="btn btn-primary" onClick={handleAddNote} disabled={!newNoteText.trim()}>Add</button>
             </div>
 
             <div className="form-actions">

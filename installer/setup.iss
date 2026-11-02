@@ -1,27 +1,22 @@
-; Inventory Management System - Complete Installer
-; Includes: Java JRE, PostgreSQL, Backend, Frontend, Database
+; ============================================================
+;  CFT Electronic - Web Inventory System Installer
+;  Architecture: Spring Boot JAR (serves API + React frontend)
+;                Database on Supabase (cloud) - no local DB needed
+; ============================================================
 
-#define MyAppName "Inventory Management System"
-#define MyAppVersion "1.0.0"
-#define MyAppPublisher "Your Company"
-#define MyAppURL "https://yourcompany.com"
-#define MyAppExeName "start-all.bat"
+#define AppName    "CFT Electronic"
+#define AppVersion "1.1.0"
+#define AppPublisher "CFT Electronic"
 
 [Setup]
-AppId={{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\InventorySystem
-DefaultGroupName={#MyAppName}
-AllowNoIcons=yes
-LicenseFile=
+AppId={{B7E4C2A1-F3D8-4E90-BC12-8A7D5E6F1234}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher={#AppPublisher}
+DefaultDirName={autopf}\CFT Electronic
+DefaultGroupName={#AppName}
 OutputDir=output
-OutputBaseFilename=InventorySystem-Setup-v{#MyAppVersion}
-SetupIconFile=
+OutputBaseFilename=CFT-Electronic-Setup-v{#AppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -29,82 +24,55 @@ ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 PrivilegesRequired=admin
 DisableProgramGroupPage=yes
-UninstallDisplayIcon={app}\scripts\{#MyAppExeName}
+; No icon file required — uses system default
+UninstallDisplayName={#AppName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 6.1; Check: not IsAdminInstallMode
+Name: "firewall"; Description: "Allow CFT Electronic through Windows Firewall (required so other PCs can connect on your network)"; GroupDescription: "Network:"
 
 [Files]
-; Java JRE (Runtime Environment) - DEBE estar en installer\jre\
+; ── Bundled Java JRE (no Java install needed on target PC) ──────────────────
 Source: "jre\*"; DestDir: "{app}\jre"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Backend Application
-Source: "backend.jar"; DestDir: "{app}\backend"; Flags: ignoreversion
-Source: "application.properties"; DestDir: "{app}\backend\config"; Flags: ignoreversion
+; ── Spring Boot JAR (contains the React frontend + backend API) ──────────────
+; Run build.bat first to generate this file
+Source: "app\backend.jar"; DestDir: "{app}\app"; Flags: ignoreversion
 
-; Frontend Application
-Source: "frontend.jar"; DestDir: "{app}\frontend"; Flags: ignoreversion
-Source: "frontend-lib\*"; DestDir: "{app}\frontend\lib"; Flags: ignoreversion recursesubdirs
+; ── External config (DB connection — can be edited without rebuilding) ───────
+Source: "app\config\application.properties"; DestDir: "{app}\app\config"; Flags: ignoreversion
 
-; Database
-Source: "database-backup.sql"; DestDir: "{app}\database"; Flags: ignoreversion
-Source: "postgresql-18.1-2-windows-x64.exe"; DestDir: "{tmp}"; DestName: "postgresql-installer.exe"; Flags: deleteafterinstall
-
-; Scripts
-Source: "scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion
-
-; Product Images (opcional - comentar si no tienes)
-Source: "product-images\*"; DestDir: "{app}\product-images"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: DirExists(ExpandConstant('{src}\product-images'))
+; ── Launcher scripts ─────────────────────────────────────────────────────────
+Source: "scripts\start.vbs";  DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\stop.bat";   DestDir: "{app}"; Flags: ignoreversion
+Source: "scripts\info.bat";   DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\scripts\start-all.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\shell32.dll"; IconIndex: 21
-Name: "{group}\Backend Server Only"; Filename: "{app}\scripts\start-backend.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\imageres.dll"; IconIndex: 73
-Name: "{group}\Frontend Client Only"; Filename: "{app}\scripts\start-frontend.bat"; WorkingDir: "{app}"; IconFilename: "{sys}\imageres.dll"; IconIndex: 2
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\scripts\start-all.bat"; WorkingDir: "{app}"; Tasks: desktopicon; IconFilename: "{sys}\shell32.dll"; IconIndex: 21
+; Start Menu
+Name: "{group}\Start CFT Electronic";  Filename: "{sys}\wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; Comment: "Start the CFT Electronic server and open browser"
+Name: "{group}\Stop CFT Electronic";   Filename: "{app}\stop.bat";  WorkingDir: "{app}"; Comment: "Stop the backend server"
+Name: "{group}\Network Info";          Filename: "{app}\info.bat";  WorkingDir: "{app}"; Comment: "Show your LAN address for other PCs"
+Name: "{group}\Uninstall {#AppName}";  Filename: "{uninstallexe}"
+
+; Desktop — always created (no task condition)
+Name: "{commondesktop}\CFT Electronic"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; Comment: "Start CFT Electronic"
+Name: "{userdesktop}\CFT Electronic";   Filename: "{sys}\wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; Comment: "Start CFT Electronic"
 
 [Run]
-; Instalar PostgreSQL
-Filename: "{tmp}\postgresql-installer.exe"; Parameters: "--mode unattended --unattendedmodeui minimal --superpassword admin123 --servicename postgresql-x64-15 --serverport 5432"; StatusMsg: "Installing PostgreSQL Server..."; Flags: waituntilterminated runhidden
+; Open Windows Firewall for port 8080 (lets other LAN PCs connect)
+Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CFT Electronic"" protocol=TCP dir=in localport=8080 action=allow"; Flags: runhidden; Tasks: firewall
 
-; Esperar a que PostgreSQL inicie completamente
-Filename: "{cmd}"; Parameters: "/c timeout /t 10"; StatusMsg: "Waiting for PostgreSQL to initialize..."; Flags: runhidden waituntilterminated
+; Launch the app after install
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; Description: "Launch CFT Electronic now"; Flags: postinstall nowait skipifsilent
 
-; Crear base de datos
-Filename: "{cmd}"; Parameters: "/c set PGPASSWORD=admin123 && ""{code:GetPostgreSQLPath}\psql.exe"" -U postgres -c ""CREATE DATABASE inv_db;"""; StatusMsg: "Creating database..."; Flags: runhidden waituntilterminated
+[UninstallRun]
+; Kill running backend before uninstall
+Filename: "taskkill"; Parameters: "/F /IM javaw.exe /T"; Flags: runhidden
 
-; Restaurar backup de base de datos
-Filename: "{cmd}"; Parameters: "/c set PGPASSWORD=admin123 && ""{code:GetPostgreSQLPath}\psql.exe"" -U postgres -d inv_db -f ""{app}\database\database-backup.sql"""; StatusMsg: "Restoring database backup..."; Flags: runhidden waituntilterminated
-
-; Mensaje de éxito
-Filename: "{app}\scripts\start-all.bat"; Description: "Launch {#MyAppName}"; Flags: postinstall nowait skipifsilent unchecked
+; Remove firewall rule
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CFT Electronic"""; Flags: runhidden
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
-
-[Code]
-var
-  PostgreSQLPath: String;
-
-function GetPostgreSQLPath(Param: String): String;
-begin
-  if RegQueryStringValue(HKLM, 'SOFTWARE\PostgreSQL\Installations\postgresql-x64-15', 'Base Directory', PostgreSQLPath) then
-    Result := PostgreSQLPath + '\bin'
-  else
-    Result := 'C:\Program Files\PostgreSQL\15\bin';
-end;
-
-function InitializeSetup(): Boolean;
-begin
-  // All files are embedded in the installer, no need to check {src}
-  Result := True;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  // Post-install actions if needed in the future
-end;

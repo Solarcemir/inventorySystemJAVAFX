@@ -2,7 +2,8 @@ import { useEffect, useState, useMemo, FormEvent } from 'react';
 import { productService } from '../services/productService';
 import { clientService } from '../services/clientService';
 import { saleService } from '../services/saleService';
-import { logService } from '../services/logService';
+import { imageService } from '../services/imageService';
+import { getErrorMessage } from '../services/api';
 import { isAdmin } from '../services/authService';
 import { Product, Client } from '../types';
 
@@ -34,8 +35,13 @@ export default function Inventory() {
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState<Product | null>(null);
   const [editError, setEditError] = useState('');
+  const [imageList, setImageList] = useState<string[]>([]);
+  const [editUploading, setEditUploading] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    imageService.list().then(setImageList).catch(() => {});
+  }, []);
 
   const loadData = async () => {
     try {
@@ -107,14 +113,13 @@ export default function Inventory() {
       } else {
         await saleService.create(selected.id!, sellQty);
       }
-      await logService.log('SALE', `Sold ${sellQty}x "${selected.productName}" for $${(Number(selected.price) * sellQty).toFixed(2)}`);
       setShowSell(false);
       setSellQty(1);
       setSellClientId(0);
       setSelected(null);
       await loadData();
-    } catch (err: any) {
-      setSellError(typeof err.response?.data === 'string' ? err.response.data : 'Failed to create sale');
+    } catch (err) {
+      setSellError(getErrorMessage(err, 'Failed to create sale'));
     }
   };
 
@@ -124,15 +129,14 @@ export default function Inventory() {
     if (!editForm) return;
     try {
       await productService.update(editForm.id!, editForm);
-      await logService.log('EDIT_PRODUCT', `Edited product "${editForm.productName}" (ID: ${editForm.id})`);
       setShowEdit(false);
       setEditForm(null);
       const updated = await productService.getAll();
       setProducts(updated);
       const sel = updated.find((p) => p.id === editForm.id);
       if (sel) setSelected(sel);
-    } catch (err: any) {
-      setEditError(err.response?.data?.message || 'Failed to update product');
+    } catch (err) {
+      setEditError(getErrorMessage(err, 'Failed to update product'));
     }
   };
 
@@ -141,7 +145,6 @@ export default function Inventory() {
     if (!window.confirm(`Delete "${selected.productName}"?`)) return;
     try {
       await productService.delete(selected.id!);
-      await logService.log('DELETE_PRODUCT', `Deleted product "${selected.productName}" (ID: ${selected.id})`);
       setSelected(null);
       await loadData();
     } catch (err) {
@@ -269,12 +272,11 @@ export default function Inventory() {
           {selected ? (
             <div className="product-detail">
               <div className="detail-image-container">
-                {selected.imagePath && (selected.imagePath.startsWith('http://') || selected.imagePath.startsWith('https://') || selected.imagePath.startsWith('/')) ? (
-                  <img src={selected.imagePath} alt={selected.productName} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                {imageService.toSrc(selected.imagePath) ? (
+                  <img key={selected.id} src={imageService.toSrc(selected.imagePath)!} alt={selected.productName} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <div className="detail-image-placeholder">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" width="64" height="64"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    {selected.imagePath && <span style={{ fontSize: '0.7rem', color: '#999', marginTop: '4px', textAlign: 'center' }}>Upload to Supabase to display</span>}
                   </div>
                 )}
               </div>
@@ -382,20 +384,43 @@ export default function Inventory() {
                   <input type="number" min="0" value={editForm.productQuantity} onChange={(e) => setEditForm({ ...editForm, productQuantity: parseInt(e.target.value) || 0 })} />
                 </div>
                 <div className="form-group full-width">
-                  <label>Image Path</label>
-                  <div className="image-input-row">
-                    <input type="text" value={editForm.imagePath || ''} onChange={(e) => setEditForm({ ...editForm, imagePath: e.target.value })} placeholder="product-images/photo.jpg" />
-                    <label className="btn btn-browse">
-                      Browse
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setEditForm({ ...editForm, imagePath: `product-images/${file.name}` });
-                      }} />
+                  <label>Product Image</label>
+                  <div className="image-pick-row">
+                    <label className={`btn btn-browse ${editUploading ? 'btn-disabled' : ''}`}>
+                      {editUploading ? 'Uploading...' : '📁 Browse...'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={editUploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setEditUploading(true);
+                          try {
+                            const filename = await imageService.upload(file);
+                            setEditForm({ ...editForm, imagePath: filename });
+                            setImageList(prev => prev.includes(filename) ? prev : [...prev, filename].sort());
+                          } catch (err: any) {
+                            setEditError('Upload failed: ' + (err?.message || 'unknown error'));
+                          } finally {
+                            setEditUploading(false);
+                            e.target.value = '';
+                          }
+                        }}
+                      />
                     </label>
+                    <select
+                      value={editForm.imagePath}
+                      onChange={(e) => setEditForm({ ...editForm, imagePath: e.target.value })}
+                      className="image-select"
+                    >
+                      <option value="">— select existing —</option>
+                      {imageList.map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                    <button type="button" className="btn btn-sm" onClick={() => imageService.list().then(setImageList).catch(() => {})} title="Refresh list">↺</button>
                   </div>
-                  {editForm.imagePath && (
-                    <div className="edit-image-preview">
-                      <img src={editForm.imagePath} alt="Preview" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  {editForm.imagePath && imageService.toSrc(editForm.imagePath) && (
+                    <div className="edit-image-preview" style={{ marginTop: '0.5rem' }}>
+                      <img key={editForm.imagePath} src={imageService.toSrc(editForm.imagePath)!} alt="Preview" style={{ maxHeight: 80, borderRadius: 6 }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     </div>
                   )}
                 </div>

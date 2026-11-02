@@ -1,3 +1,5 @@
+// Fields marked "admin only" are left out of the responses sent to sellers
+
 export interface Product {
   id?: number;
   productName: string;
@@ -5,7 +7,7 @@ export interface Product {
   productQuantity: number;
   category: string;
   price: number;
-  costPrice: number;
+  costPrice: number; // admin only
   imagePath?: string;
   description?: string;
   location?: string;
@@ -18,7 +20,7 @@ export interface Client {
   lastName: string;
   email: string;
   phoneNumber: string;
-  spentAmount?: number;
+  spentAmount?: number; // admin only
   deleted?: boolean;
 }
 
@@ -27,10 +29,11 @@ export interface Sale {
   product: Product;
   client?: Client;
   quantity: number;
-  totalAmount: number;
-  costAmount: number;
-  profitAmount: number;
+  totalAmount: number; // admin only
+  costAmount: number; // admin only
+  profitAmount: number; // admin only
   saleDate: string;
+  invoiceId?: number;
 }
 
 export interface User {
@@ -56,6 +59,9 @@ export interface Installation {
   price: number;
   serviceDate?: string;
   status: string;
+  invoiceNumber?: string;
+  carModel?: string;
+  invoiceId?: number;
 }
 
 export interface ActivityLog {
@@ -69,6 +75,8 @@ export interface ActivityLog {
 export interface Invoice {
   id?: number;
   invoiceName?: string;
+  invoiceNumber?: string;
+  carModel?: string;
   clientName?: string;
   sellerUsername?: string;
   subtotal: number;
@@ -85,7 +93,7 @@ export interface Invoice {
 
 export interface InvoiceItem {
   id?: number;
-  productId: number;
+  productId?: number; // empty on service lines, such as a billed installation
   productName: string;
   quantity: number;
   unitPrice: number;
@@ -107,12 +115,14 @@ export interface AnalyticsSummary {
   outOfStockCount: number;
   todaySales: number;
   todayProfit: number;
+  installationRevenue: number;
+  installationCount: number;
 }
 
 export interface SalesByDay { date: string; total: number; }
 export interface SalesByMonth { month: string; total: number; }
-export interface TopProduct { productName: string; totalQuantity: number; totalRevenue: number; }
-export interface CategorySales { category: string; totalRevenue: number; totalQuantity: number; }
-export interface LowStockProduct { id: number; productName: string; quantity: number; category: string; }
-export interface RecentSale { id: number; productName: string; quantity: number; totalAmount: number; saleDate: string; }
+export interface TopProduct { productId: number; productName: string; quantitySold: number; revenue: number; }
+export interface CategorySales { category: string; revenue: number; quantity: number; }
+export interface LowStockProduct { productId: number; productName: string; quantity: number; category: string; }
+export interface RecentSale { saleId: number; productName: string; quantity: number; totalAmount: number; saleDate: string; }
 export interface DailyAnalytics { date: string; revenue: number; cost: number; profit: number; margin: number; salesCount: number; itemsSold: number; }

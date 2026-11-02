@@ -1,5 +1,7 @@
 package com.inventory.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import com.inventory.backend.auth.Views;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -24,6 +26,7 @@ public class Client {
     private String phoneNumber;
 
     @Column(name = "spent_amount")
+    @JsonView(Views.Admin.class)
     private BigDecimal spentAmount;
 
     @Column(name = "deleted")

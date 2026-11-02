@@ -1,13 +1,23 @@
 package com.inventory.backend;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+import java.sql.Connection;
+import javax.sql.DataSource;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@IsolatedDatabaseTest
 class BackendApplicationTests {
 
+	@Autowired
+	private DataSource dataSource;
+
 	@Test
-	void contextLoads() {
+	void testsRunOnTheInMemoryDatabase() throws Exception {
+		try (Connection connection = dataSource.getConnection()) {
+			assertThat(connection.getMetaData().getURL()).startsWith("jdbc:h2:mem:");
+		}
 	}
 
 }

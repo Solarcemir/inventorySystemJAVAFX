@@ -34,7 +34,16 @@ export const invoiceService = {
     return response.data;
   },
 
-  updateSettings: async (invoiceId: number, settings: { invoiceName?: string; clientName?: string; discountPercent?: string }): Promise<Invoice> => {
+  updateSettings: async (
+    invoiceId: number,
+    settings: {
+      invoiceName?: string;
+      clientName?: string;
+      discountPercent?: string;
+      invoiceNumber?: string;
+      carModel?: string;
+    }
+  ): Promise<Invoice> => {
     const response = await api.put<Invoice>(`/api/invoices/${invoiceId}/settings`, settings);
     return response.data;
   },
@@ -44,7 +53,16 @@ export const invoiceService = {
     return response.data;
   },
 
+  reopen: async (invoiceId: number): Promise<Invoice> => {
+    const response = await api.post<Invoice>(`/api/invoices/${invoiceId}/reopen`);
+    return response.data;
+  },
+
   cancel: async (invoiceId: number): Promise<void> => {
     await api.post(`/api/invoices/${invoiceId}/cancel`);
+  },
+
+  deleteInvoice: async (invoiceId: number): Promise<void> => {
+    await api.delete(`/api/invoices/${invoiceId}`);
   },
 };

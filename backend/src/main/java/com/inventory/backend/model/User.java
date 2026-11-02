@@ -14,6 +14,9 @@ public class User {
   private String username;
   private String password;
 
+  @Column(name = "role")
+  private String role = "ADMIN"; // ADMIN or SELLER
+
 
   public Long getId(){
     return id;
@@ -28,4 +31,6 @@ public class User {
   public void setUsername(String username){this.username = username;}
   public void setPassword(String password) {this.password = password;}
 
+  public String getRole() { return role != null ? role : "ADMIN"; }
+  public void setRole(String role) { this.role = role; }
 }

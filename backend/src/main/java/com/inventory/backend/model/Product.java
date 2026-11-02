@@ -1,5 +1,7 @@
 package com.inventory.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import com.inventory.backend.auth.Views;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -26,12 +28,16 @@ public class Product {
     private BigDecimal price;
 
     @Column(name = "cost_price")
+    @JsonView(Views.Admin.class)
     private BigDecimal costPrice;
 
     @Column(name = "image_path")
     private String imagePath;
 
     private String description;
+
+    @Column(name = "location")
+    private String location;
 
     @Column(name = "deleted")
     private Boolean deleted = false;
@@ -119,5 +125,13 @@ public class Product {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 }

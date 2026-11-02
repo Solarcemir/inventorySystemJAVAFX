@@ -1,5 +1,6 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.model.Client;
 import com.inventory.backend.services.ClientService;
 import org.springframework.web.bind.annotation.*;
@@ -30,12 +31,13 @@ public class ClientController {
         return clientService.createClient(client);
     }
 
+    @AdminOnly
     @PutMapping("/{id}")
     public Client updateClient(@PathVariable Long id, @RequestBody Client client) {
-        // TODO: Implementar lógica de actualización
-        return clientService.getClientById(id);
+        return clientService.updateClient(id, client);
     }
 
+    @AdminOnly
     @DeleteMapping("/{id}")
     public void deleteClient(@PathVariable Long id) {
         clientService.deleteClientById(id);

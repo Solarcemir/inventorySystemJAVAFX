@@ -1,16 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
 import { saleService } from '../services/saleService';
-import { logService } from '../services/logService';
 import { isAdmin } from '../services/authService';
+import { getErrorMessage } from '../services/api';
 import { Sale } from '../types';
 
 export default function Sales() {
   const admin = isAdmin();
-  if (!admin) return <Navigate to="/" replace />;
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => { loadSales(); }, []);
 
@@ -60,12 +59,12 @@ export default function Sales() {
   const handleDelete = async (sale: Sale) => {
     const msg = `Delete sale #${sale.id}?\n\nThis will return ${sale.quantity} unit(s) of "${sale.product?.productName}" back to inventory.`;
     if (!window.confirm(msg)) return;
+    setError('');
     try {
       await saleService.delete(sale.id!);
-      await logService.log('DELETE_SALE', `Deleted sale #${sale.id} — ${sale.quantity}x "${sale.product?.productName}" ($${Number(sale.totalAmount).toFixed(2)})`);
       await loadSales();
     } catch (err) {
-      console.error('Failed to delete sale', err);
+      setError(getErrorMessage(err, 'Failed to delete sale'));
     }
   };
 
@@ -104,6 +103,8 @@ export default function Sales() {
         </div>
       </div>
 
+      {error && <div className="error-message">{error}</div>}
+
       {filtered.length === 0 ? (
         <p className="empty-state">
           {filterMonth ? 'No sales found for this month.' : 'No sales recorded yet. Go to Inventory to sell products.'}
@@ -140,9 +141,13 @@ export default function Sales() {
                 <td>{new Date(s.saleDate).toLocaleDateString()}</td>
                 {admin && (
                   <td>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(s)} title="Delete sale and return to inventory">
-                      Delete
-                    </button>
+                    {s.invoiceId ? (
+                      <span title="Reopen or delete the invoice to reverse this sale">Invoice #{s.invoiceId}</span>
+                    ) : (
+                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(s)} title="Delete sale and return to inventory">
+                        Delete
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>

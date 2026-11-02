@@ -1,10 +1,12 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.services.AnalyticsService;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.List;
 
+@AdminOnly
 @RestController
 @RequestMapping("/api/analytics")
 public class AnalyticsController {

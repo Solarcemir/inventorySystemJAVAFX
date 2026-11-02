@@ -4,8 +4,8 @@ import { ActivityLog } from '../types';
 
 const ACTION_COLORS: Record<string, string> = {
   SALE: '#27ae60', ADD_PRODUCT: '#2980b9', DELETE_PRODUCT: '#e74c3c', EDIT_PRODUCT: '#f39c12',
-  ADD_CLIENT: '#8e44ad', DELETE_SALE: '#c0392b', INSTALLATION: '#e67e22', LOGIN: '#1abc9c',
-  INVOICE: '#3498db',
+  ADD_CLIENT: '#8e44ad', EDIT_CLIENT: '#f39c12', DELETE_CLIENT: '#e74c3c', DELETE_SALE: '#c0392b',
+  INSTALLATION: '#e67e22', LOGIN: '#1abc9c', INVOICE: '#3498db',
 };
 
 export default function ActivityLogPage() {
