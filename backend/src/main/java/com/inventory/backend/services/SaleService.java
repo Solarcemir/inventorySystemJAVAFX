@@ -76,9 +76,7 @@ public class SaleService {
                     .orElseThrow(() -> ApiException.notFound("Cliente no encontrado"));
 
             // Actualizar el monto gastado del cliente
-            BigDecimal currentSpent = client.getSpentAmount() != null ? client.getSpentAmount() : BigDecimal.ZERO;
-            client.setSpentAmount(currentSpent.add(totalAmount));
-            clientRepository.save(client);
+            clientRepository.addToSpentAmount(client.getId(), totalAmount);
         }
 
         // Crear venta con cliente, costo y ganancia
@@ -144,9 +142,7 @@ public class SaleService {
         // Revertir el monto gastado del cliente
         Client client = sale.getClient();
         if (client != null && sale.getTotalAmount() != null) {
-            BigDecimal currentSpent = client.getSpentAmount() != null ? client.getSpentAmount() : BigDecimal.ZERO;
-            client.setSpentAmount(currentSpent.subtract(sale.getTotalAmount()));
-            clientRepository.save(client);
+            clientRepository.addToSpentAmount(client.getId(), sale.getTotalAmount().negate());
         }
 
         saleRepository.deleteById(saleId);

@@ -4,7 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.inventory.backend.model.ActivityLog;
 import com.inventory.backend.model.Client;
+import com.inventory.backend.model.Installation;
+import com.inventory.backend.model.Invoice;
 import com.inventory.backend.model.Product;
+import com.inventory.backend.services.InstallationServiceBean;
+import com.inventory.backend.services.InvoiceService;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +29,8 @@ class ApiSecurityTests {
 
     @Autowired TestData data;
     @Autowired TestRestTemplate rest;
+    @Autowired InvoiceService invoices;
+    @Autowired InstallationServiceBean installationService;
 
     private String admin;
     private String seller;
@@ -188,6 +196,166 @@ class ApiSecurityTests {
                 Map.of("invoiceName", "Order", "sellerUsername", "someone-else"));
 
         assertThat(response.getBody()).contains("\"sellerUsername\":\"vendor\"");
+    }
+
+    @Test
+    void aNewInvoiceIgnoresItemsTotalsAndStatusFromTheBrowser() {
+        Product product = data.product("Speaker", "100.00", "60.00", 10);
+        Map<String, Object> forged = new HashMap<>();
+        forged.put("invoiceName", "Order");
+        forged.put("clientName", "Ana");
+        forged.put("status", "FINALIZED");
+        forged.put("total", 1);
+        forged.put("subtotal", 1);
+        forged.put("taxPercent", 0);
+        forged.put("discountPercent", 90);
+        forged.put("finalizedAt", "2020-01-01T00:00:00");
+        forged.put("items", List.of(Map.of("productId", product.getId(), "productName", "Free", "quantity", 5, "unitPrice", 0, "lineTotal", -500)));
+
+        ResponseEntity<String> response = call(HttpMethod.POST, "/api/invoices", seller, forged);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"invoiceName\":\"Order\"", "\"clientName\":\"Ana\"", "\"status\":\"OPEN\"",
+                "\"items\":[]", "\"total\":0", "\"taxPercent\":7", "\"discountPercent\":0", "\"finalizedAt\":null");
+    }
+
+    private Invoice openInvoiceWith(Product product) {
+        Invoice invoice = invoices.create(new Invoice());
+        return invoices.addItem(invoice.getId(), product.getId(), 2);
+    }
+
+    private ResponseEntity<String> changeSettings(Long invoiceId, String cookie, Map<String, String> settings) {
+        return call(HttpMethod.PUT, "/api/invoices/" + invoiceId + "/settings", cookie, settings);
+    }
+
+    private Map<String, Object> installationBody(Object price, String status) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("serviceName", "Radio");
+        body.put("installerName", "Tech");
+        body.put("price", price);
+        body.put("status", status);
+        return body;
+    }
+
+    @Test
+    void sellersFinalizeInvoicesButOnlyAdminsCanUndoThem() {
+        Product product = data.product("Speaker", "100.00", "60.00", 10);
+        Invoice invoice = openInvoiceWith(product);
+        String path = "/api/invoices/" + invoice.getId();
+
+        assertThat(call(HttpMethod.POST, path + "/finalize", seller, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(call(HttpMethod.POST, path + "/reopen", seller, null).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(call(HttpMethod.DELETE, path, seller, null).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(data.stock(product)).isEqualTo(8);
+
+        assertThat(call(HttpMethod.POST, path + "/reopen", admin, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(data.stock(product)).isEqualTo(10);
+        assertThat(call(HttpMethod.DELETE, path, admin, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void sellersCanWorkOnAnOpenInvoiceAndCancelIt() {
+        Product product = data.product("Speaker", "100.00", "60.00", 10);
+        Invoice invoice = openInvoiceWith(product);
+        String path = "/api/invoices/" + invoice.getId();
+
+        assertThat(changeSettings(invoice.getId(), seller, Map.of("clientName", "Ana", "carModel", "Hilux")).getBody())
+                .contains("\"clientName\":\"Ana\"", "\"carModel\":\"Hilux\"");
+        assertThat(call(HttpMethod.POST, path + "/items?productId=" + product.getId() + "&quantity=1", seller, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(call(HttpMethod.DELETE, path + "/items/" + invoice.getItems().get(0).getId(), seller, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(call(HttpMethod.POST, path + "/cancel", seller, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void onlyAdminsCanChangeADiscount() {
+        Invoice invoice = openInvoiceWith(data.product("Speaker", "100.00", "60.00", 10));
+
+        ResponseEntity<String> refused = changeSettings(invoice.getId(), seller, Map.of("discountPercent", "50"));
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(refused.getBody()).contains("descuento");
+        assertThat(invoices.getById(invoice.getId()).getDiscountPercent()).isEqualByComparingTo("0");
+
+        // The settings screen resends the current discount when a seller saves other fields
+        assertThat(changeSettings(invoice.getId(), seller, Map.of("discountPercent", "0", "clientName", "Ana")).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(changeSettings(invoice.getId(), admin, Map.of("discountPercent", "50")).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(invoices.getById(invoice.getId()).getTotal()).isEqualByComparingTo("107.00");
+    }
+
+    @Test
+    void sellersCannotEditAClosedInvoice() {
+        Invoice invoice = openInvoiceWith(data.product("Speaker", "100.00", "60.00", 10));
+        invoices.finalize(invoice.getId());
+
+        assertThat(changeSettings(invoice.getId(), seller, Map.of("clientName", "Someone else")).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(changeSettings(invoice.getId(), admin, Map.of("clientName", "Corrected")).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void sellersCreateAndAdvanceInstallationsButCannotRemoveThem() {
+        ResponseEntity<String> created = call(HttpMethod.POST, "/api/installations", seller, installationBody(50, "PENDING"));
+        assertThat(created.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long id = data.installations.findAll().get(0).getId();
+        String path = "/api/installations/" + id;
+
+        assertThat(call(HttpMethod.PUT, path, seller, installationBody(50, "COMPLETED")).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(data.installations.findById(id).orElseThrow().getStatus()).isEqualTo("COMPLETED");
+        assertThat(call(HttpMethod.DELETE, path, seller, null).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        assertThat(call(HttpMethod.DELETE, path, admin, null).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(data.installations.count()).isZero();
+    }
+
+    @Test
+    void sellersCannotChangeAnInstallationsPrice() {
+        Long id = data.installation("Radio", "50.00", "PENDING", LocalDateTime.now()).getId();
+        String path = "/api/installations/" + id;
+
+        ResponseEntity<String> refused = call(HttpMethod.PUT, path, seller, installationBody(1, "PENDING"));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(refused.getBody()).contains("precio");
+        assertThat(data.installations.findById(id).orElseThrow().getPrice()).isEqualByComparingTo("50.00");
+
+        assertThat(call(HttpMethod.PUT, path, admin, installationBody(75, "PENDING")).getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(data.installations.findById(id).orElseThrow().getPrice()).isEqualByComparingTo("75.00");
+    }
+
+    @Test
+    void aCompletedInstallationIsClosedToSellers() {
+        Long id = data.installation("Radio", "50.00", "COMPLETED", LocalDateTime.now()).getId();
+
+        ResponseEntity<String> refused = call(HttpMethod.PUT, "/api/installations/" + id, seller, installationBody(50, "CANCELLED"));
+
+        assertThat(refused.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(data.installations.findById(id).orElseThrow().getStatus()).isEqualTo("COMPLETED");
+    }
+
+    @Test
+    void aSellerEditingAnInstallationKeepsItsInvoiceLink() {
+        Installation installation = data.installation("Radio", "50.00", "PENDING", LocalDateTime.now());
+        Invoice invoice = installationService.createInvoice(installation.getId(), "vendor");
+        Map<String, Object> body = installationBody(50, "PENDING");
+        body.put("invoiceId", 999999);
+
+        call(HttpMethod.PUT, "/api/installations/" + installation.getId(), seller, body);
+
+        assertThat(data.installations.findById(installation.getId()).orElseThrow().getInvoiceId()).isEqualTo(invoice.getId());
+    }
+
+    @Test
+    void searchTextIsTreatedAsDataNotAsAQuery() {
+        data.user("x' or '1'='1", "pass", "ADMIN");
+        data.product("Speaker", "100.00", "60.00", 10);
+
+        assertThat(loginResponse("owner' --", "owner-pass").getBody()).contains("\"success\":false");
+        assertThat(loginResponse("' or '1'='1", "' or '1'='1").getBody()).contains("\"success\":false");
+        assertThat(get("/api/logs/user/' or '1'='1", admin).getBody()).isEqualTo("[]");
+        assertThat(get("/api/invoices/seller/' or '1'='1", admin).getBody()).isEqualTo("[]");
+        assertThat(data.products.count()).isEqualTo(1);
     }
 
     @Test

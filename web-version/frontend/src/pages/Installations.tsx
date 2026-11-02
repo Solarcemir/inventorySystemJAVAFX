@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { installationService } from '../services/installationService';
+import { isAdmin } from '../services/authService';
 import { getErrorMessage } from '../services/api';
 import { Installation } from '../types';
 
@@ -26,6 +27,7 @@ const emptyInstallation: Installation = {
 };
 
 export default function Installations() {
+  const admin = isAdmin();
   const navigate = useNavigate();
   const [installations, setInstallations] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,7 +255,8 @@ export default function Installations() {
                 </div>
                 <div className="form-group">
                   <label>Price ($)</label>
-                  <input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} />
+                  <input type="number" step="0.01" min="0" value={form.price} disabled={!!editing && !admin} onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })} />
+                  {editing && !admin && <small style={{ color: 'var(--text-secondary)' }}>Only an admin can change the price.</small>}
                 </div>
                 <div className="form-group">
                   <label>Car Model</label>
@@ -327,8 +330,10 @@ export default function Installations() {
                   <button className="btn btn-sm btn-primary" onClick={() => handleCreateInvoice(inst)} disabled={creatingInvoiceFor === inst.id}>
                     {creatingInvoiceFor === inst.id ? '…' : inst.invoiceId ? 'View Invoice' : 'Invoice'}
                   </button>
-                  <button className="btn btn-sm btn-secondary" onClick={() => handleEdit(inst)}>Edit</button>
-                  <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id!)}>Delete</button>
+                  {(admin || inst.status !== 'COMPLETED') && (
+                    <button className="btn btn-sm btn-secondary" onClick={() => handleEdit(inst)}>Edit</button>
+                  )}
+                  {admin && <button className="btn btn-sm btn-danger" onClick={() => handleDelete(inst.id!)}>Delete</button>}
                 </td>
               </tr>
             ))}

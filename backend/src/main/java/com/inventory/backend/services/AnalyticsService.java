@@ -1,11 +1,9 @@
 package com.inventory.backend.services;
 
-import com.inventory.backend.model.Installation;
-import com.inventory.backend.model.Product;
-import com.inventory.backend.model.Sale;
 import com.inventory.backend.repository.InstallationRepository;
 import com.inventory.backend.repository.ProductRepository;
 import com.inventory.backend.repository.SaleRepository;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,8 +12,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Every number here is calculated by the database. Loading sales into memory to add
+ * them up costs one query per product and client, over the internet to Supabase.
+ */
 @Service
 public class AnalyticsService {
 
@@ -33,228 +36,127 @@ public class AnalyticsService {
     // Resumen general
     public Map<String, Object> getSummary() {
         Map<String, Object> summary = new HashMap<>();
-        
+
         // Solo productos activos (no eliminados)
-        List<Product> activeProducts = productRepository.findByDeletedFalseOrDeletedIsNull();
-        long totalProducts = activeProducts.size();
-        summary.put("totalProducts", totalProducts);
-        
-        // Total de ventas (cantidad)
-        long totalSalesCount = saleRepository.count();
-        summary.put("totalSalesCount", totalSalesCount);
-        
-        // Ingresos totales (revenue = precio venta)
-        List<Sale> allSales = saleRepository.findAll();
-        BigDecimal totalRevenue = allSales.stream()
-                .map(Sale::getTotalAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("totalRevenue", totalRevenue);
-        
-        // Calcular costo total y profit desde los campos de Sale
-        BigDecimal totalCost = allSales.stream()
-                .map(Sale::getCostAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("totalCost", totalCost);
-        
-        // Profit total directo desde ventas
-        BigDecimal totalProfit = allSales.stream()
-                .map(Sale::getProfitAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("totalProfit", totalProfit);
-        
-        // Margen de ganancia porcentual
-        BigDecimal profitMargin = totalRevenue.compareTo(BigDecimal.ZERO) > 0
-                ? totalProfit.divide(totalRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
-                : BigDecimal.ZERO;
-        summary.put("profitMargin", profitMargin);
-        
-        // Venta promedio
-        BigDecimal avgSale = totalSalesCount > 0 
-                ? totalRevenue.divide(BigDecimal.valueOf(totalSalesCount), 2, RoundingMode.HALF_UP)
+        ProductRepository.InventoryTotals inventory = productRepository.inventoryTotals();
+        summary.put("totalProducts", inventory.getTotalProducts());
+        summary.put("inventoryValue", inventory.getInventoryValue());
+        summary.put("inventoryCost", inventory.getInventoryCost());
+        summary.put("potentialProfit", inventory.getInventoryValue().subtract(inventory.getInventoryCost()));
+        summary.put("lowStockCount", inventory.getLowStockCount());
+        summary.put("outOfStockCount", inventory.getOutOfStockCount());
+
+        // Ventas de productos
+        SaleRepository.Totals sales = saleRepository.totals();
+        summary.put("totalSalesCount", sales.getSalesCount());
+        summary.put("totalCost", sales.getCost());
+
+        // Venta promedio (sin instalaciones)
+        BigDecimal avgSale = sales.getSalesCount() > 0
+                ? sales.getRevenue().divide(BigDecimal.valueOf(sales.getSalesCount()), 2, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         summary.put("averageSale", avgSale);
-        
-        // Valor del inventario (solo productos activos, usando precio de venta)
-        BigDecimal inventoryValue = activeProducts.stream()
-                .filter(p -> p.getPrice() != null && p.getProductQuantity() != null && p.getProductQuantity() > 0)
-                .map(p -> p.getPrice().multiply(BigDecimal.valueOf(p.getProductQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("inventoryValue", inventoryValue);
-        
-        // Costo del inventario (solo productos activos)
-        BigDecimal inventoryCost = activeProducts.stream()
-                .filter(p -> p.getCostPrice() != null && p.getProductQuantity() != null && p.getProductQuantity() > 0)
-                .map(p -> p.getCostPrice().multiply(BigDecimal.valueOf(p.getProductQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("inventoryCost", inventoryCost);
-        
-        // Ganancia potencial del inventario
-        BigDecimal potentialProfit = inventoryValue.subtract(inventoryCost);
-        summary.put("potentialProfit", potentialProfit);
-        
-        // Productos con bajo stock (menos de 5) - solo activos
-        long lowStockCount = activeProducts.stream()
-                .filter(p -> p.getProductQuantity() != null && p.getProductQuantity() > 0 && p.getProductQuantity() < 5)
-                .count();
-        summary.put("lowStockCount", lowStockCount);
-        
-        // Productos sin stock - solo activos
-        long outOfStockCount = activeProducts.stream()
-                .filter(p -> p.getProductQuantity() == null || p.getProductQuantity() == 0)
-                .count();
-        summary.put("outOfStockCount", outOfStockCount);
-        
+
+        // ── Installation revenue (COMPLETED only, price = pure revenue, no cost tracked) ──
+        InstallationRepository.RevenueTotals installations = installationRepository.completedTotals();
+        summary.put("installationRevenue", installations.getRevenue());
+        summary.put("installationCount", installations.getServices());
+
+        // Add installation revenue into the grand totals
+        BigDecimal totalRevenue = sales.getRevenue().add(installations.getRevenue());
+        BigDecimal totalProfit = sales.getProfit().add(installations.getRevenue()); // no cost for installations
+        summary.put("totalRevenue", totalRevenue);
+        summary.put("totalProfit", totalProfit);
+
+        // Margen de ganancia porcentual
+        summary.put("profitMargin", margin(totalProfit, totalRevenue));
+
         // Ventas de hoy
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfToday = startOfDay.plusDays(1);
-        BigDecimal todaySales = allSales.stream()
-                .filter(s -> inRange(s.getSaleDate(), startOfDay, endOfToday))
-                .map(Sale::getTotalAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("todaySales", todaySales);
-        
-        // Profit de hoy directo desde ventas
-        BigDecimal todayProfit = allSales.stream()
-                .filter(s -> inRange(s.getSaleDate(), startOfDay, endOfToday))
-                .map(Sale::getProfitAmount)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("todayProfit", todayProfit);
-
-        // ── Installation revenue (COMPLETED only, price = pure revenue, no cost tracked) ──
-        List<Installation> completedInstalls = installationRepository.findByStatus("COMPLETED");
-        BigDecimal installationRevenue = completedInstalls.stream()
-                .map(Installation::getPrice)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        summary.put("installationRevenue", installationRevenue);
-        summary.put("installationCount", completedInstalls.size());
-
-        // Today's installation revenue
-        BigDecimal todayInstallRevenue = installationRevenue(completedInstalls, startOfDay, endOfToday);
-
-        // Add installation revenue into the grand totals
-        summary.put("totalRevenue", totalRevenue.add(installationRevenue));
-        summary.put("totalProfit", totalProfit.add(installationRevenue)); // no cost for installations
-        summary.put("todaySales", ((BigDecimal) summary.get("todaySales")).add(todayInstallRevenue));
-        summary.put("todayProfit", todayProfit.add(todayInstallRevenue));
-
-        // Recalculate profit margin with updated totals
-        BigDecimal newRevenue = (BigDecimal) summary.get("totalRevenue");
-        BigDecimal newProfit  = (BigDecimal) summary.get("totalProfit");
-        BigDecimal newMargin  = newRevenue.compareTo(BigDecimal.ZERO) > 0
-                ? newProfit.divide(newRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
-                : BigDecimal.ZERO;
-        summary.put("profitMargin", newMargin);
+        SaleRepository.Totals today = saleRepository.totalsBetween(startOfDay, endOfToday);
+        BigDecimal todayInstallRevenue = installationRepository.completedTotalsBetween(startOfDay, endOfToday).getRevenue();
+        summary.put("todaySales", today.getRevenue().add(todayInstallRevenue));
+        summary.put("todayProfit", today.getProfit().add(todayInstallRevenue));
 
         return summary;
     }
 
-    // Incluye el inicio y excluye el final, para que una venta a medianoche caiga en un solo día
-    private boolean inRange(LocalDateTime when, LocalDateTime start, LocalDateTime end) {
-        return when != null && !when.isBefore(start) && when.isBefore(end);
+    private BigDecimal margin(BigDecimal profit, BigDecimal revenue) {
+        return revenue.compareTo(BigDecimal.ZERO) > 0
+                ? profit.divide(revenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+                : BigDecimal.ZERO;
     }
 
-    // Ingresos de instalaciones completadas en un rango (sin costo registrado)
-    private BigDecimal installationRevenue(List<Installation> completedInstalls, LocalDateTime start, LocalDateTime end) {
-        return completedInstalls.stream()
-                .filter(i -> inRange(i.getServiceDate(), start, end))
-                .map(Installation::getPrice)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    // Ingresos de instalaciones completadas por día (sin costo registrado)
+    private Map<LocalDate, BigDecimal> installationRevenueByDay(LocalDateTime start, LocalDateTime end) {
+        return installationRepository.completedRevenueByDay(start, end).stream()
+                .collect(Collectors.toMap(InstallationRepository.DailyRevenue::getDay,
+                        InstallationRepository.DailyRevenue::getRevenue));
+    }
+
+    // Ingresos por día: ventas más instalaciones completadas
+    private Map<LocalDate, BigDecimal> revenueByDay(LocalDateTime start, LocalDateTime end) {
+        Map<LocalDate, BigDecimal> revenue = new HashMap<>(installationRevenueByDay(start, end));
+        for (SaleRepository.DailyTotals day : saleRepository.dailyTotals(start, end)) {
+            revenue.merge(day.getDay(), day.getRevenue(), BigDecimal::add);
+        }
+        return revenue;
     }
 
     // Ventas por día (últimos 7 días)
     public List<Map<String, Object>> getSalesByDay() {
         List<Map<String, Object>> result = new ArrayList<>();
-        List<Sale> allSales = saleRepository.findAll();
-        List<Installation> completedInstalls = installationRepository.findByStatus("COMPLETED");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd");
-        
+        LocalDate today = LocalDate.now();
+        Map<LocalDate, BigDecimal> revenue = revenueByDay(today.minusDays(6).atStartOfDay(), today.plusDays(1).atStartOfDay());
+
         for (int i = 6; i >= 0; i--) {
-            LocalDate date = LocalDate.now().minusDays(i);
-            LocalDateTime startOfDay = date.atStartOfDay();
-            LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
-            
-            BigDecimal dayTotal = allSales.stream()
-                    .filter(s -> inRange(s.getSaleDate(), startOfDay, endOfDay))
-                    .map(Sale::getTotalAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .add(installationRevenue(completedInstalls, startOfDay, endOfDay));
+            LocalDate date = today.minusDays(i);
 
             Map<String, Object> dayData = new HashMap<>();
             dayData.put("date", date.format(formatter));
-            dayData.put("total", dayTotal);
+            dayData.put("total", revenue.getOrDefault(date, BigDecimal.ZERO));
             result.add(dayData);
         }
-        
+
         return result;
     }
 
     // Ventas por mes (últimos 6 meses)
     public List<Map<String, Object>> getSalesByMonth() {
         List<Map<String, Object>> result = new ArrayList<>();
-        List<Sale> allSales = saleRepository.findAll();
-        List<Installation> completedInstalls = installationRepository.findByStatus("COMPLETED");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM yyyy");
-        
+        LocalDate thisMonth = LocalDate.now().withDayOfMonth(1);
+        Map<LocalDate, BigDecimal> revenue = revenueByDay(thisMonth.minusMonths(5).atStartOfDay(), thisMonth.plusMonths(1).atStartOfDay());
+
         for (int i = 5; i >= 0; i--) {
-            LocalDate monthStart = LocalDate.now().minusMonths(i).withDayOfMonth(1);
+            LocalDate monthStart = thisMonth.minusMonths(i);
             LocalDate monthEnd = monthStart.plusMonths(1);
-            LocalDateTime startDateTime = monthStart.atStartOfDay();
-            LocalDateTime endDateTime = monthEnd.atStartOfDay();
-            
-            BigDecimal monthTotal = allSales.stream()
-                    .filter(s -> inRange(s.getSaleDate(), startDateTime, endDateTime))
-                    .map(Sale::getTotalAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .add(installationRevenue(completedInstalls, startDateTime, endDateTime));
+
+            BigDecimal monthTotal = revenue.entrySet().stream()
+                    .filter(day -> !day.getKey().isBefore(monthStart) && day.getKey().isBefore(monthEnd))
+                    .map(Map.Entry::getValue)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             Map<String, Object> monthData = new HashMap<>();
             monthData.put("month", monthStart.format(formatter));
             monthData.put("total", monthTotal);
             result.add(monthData);
         }
-        
+
         return result;
     }
 
     // Top 5 productos más vendidos
     public List<Map<String, Object>> getTopProducts() {
-        List<Sale> allSales = saleRepository.findAll();
-        
-        Map<Long, Integer> productSales = new HashMap<>();
-        Map<Long, String> productNames = new HashMap<>();
-        Map<Long, BigDecimal> productRevenue = new HashMap<>();
-        
-        for (Sale sale : allSales) {
-            if (sale.getProduct() != null) {
-                Long productId = sale.getProduct().getId();
-                String productName = sale.getProduct().getProductName();
-                
-                productSales.merge(productId, sale.getQuantity(), Integer::sum);
-                productNames.put(productId, productName != null ? productName : "Unknown");
-                productRevenue.merge(productId, 
-                        sale.getTotalAmount() != null ? sale.getTotalAmount() : BigDecimal.ZERO, 
-                        BigDecimal::add);
-            }
-        }
-        
-        return productSales.entrySet().stream()
-                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
-                .limit(5)
-                .map(entry -> {
+        return saleRepository.topProducts(Limit.of(5)).stream()
+                .map(row -> {
                     Map<String, Object> productData = new HashMap<>();
-                    productData.put("productId", entry.getKey());
-                    productData.put("productName", productNames.get(entry.getKey()));
-                    productData.put("quantitySold", entry.getValue());
-                    productData.put("revenue", productRevenue.get(entry.getKey()));
+                    productData.put("productId", row.getProductId());
+                    productData.put("productName", row.getProductName() != null ? row.getProductName() : "Unknown");
+                    productData.put("quantitySold", Math.toIntExact(row.getQuantitySold()));
+                    productData.put("revenue", row.getRevenue());
                     return productData;
                 })
                 .collect(Collectors.toList());
@@ -262,32 +164,12 @@ public class AnalyticsService {
 
     // Ventas por categoría
     public List<Map<String, Object>> getSalesByCategory() {
-        List<Sale> allSales = saleRepository.findAll();
-        
-        Map<String, BigDecimal> categoryRevenue = new HashMap<>();
-        Map<String, Integer> categorySales = new HashMap<>();
-        
-        for (Sale sale : allSales) {
-            if (sale.getProduct() != null) {
-                String category = sale.getProduct().getCategory();
-                if (category == null || category.isEmpty()) {
-                    category = "Uncategorized";
-                }
-                
-                categoryRevenue.merge(category, 
-                        sale.getTotalAmount() != null ? sale.getTotalAmount() : BigDecimal.ZERO, 
-                        BigDecimal::add);
-                categorySales.merge(category, sale.getQuantity(), Integer::sum);
-            }
-        }
-        
-        return categoryRevenue.entrySet().stream()
-                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
-                .map(entry -> {
+        return saleRepository.categoryTotals().stream()
+                .map(row -> {
                     Map<String, Object> catData = new HashMap<>();
-                    catData.put("category", entry.getKey());
-                    catData.put("revenue", entry.getValue());
-                    catData.put("quantity", categorySales.get(entry.getKey()));
+                    catData.put("category", row.getCategory());
+                    catData.put("revenue", row.getRevenue());
+                    catData.put("quantity", Math.toIntExact(row.getQuantity()));
                     return catData;
                 })
                 .collect(Collectors.toList());
@@ -295,10 +177,7 @@ public class AnalyticsService {
 
     // Productos con bajo stock (solo activos)
     public List<Map<String, Object>> getLowStockProducts() {
-        return productRepository.findByDeletedFalseOrDeletedIsNull().stream()
-                .filter(p -> p.getProductQuantity() != null && p.getProductQuantity() < 5 && p.getProductQuantity() > 0)
-                .sorted(Comparator.comparing(Product::getProductQuantity))
-                .limit(10)
+        return productRepository.findLowStock(Limit.of(10)).stream()
                 .map(p -> {
                     Map<String, Object> productData = new HashMap<>();
                     productData.put("productId", p.getId());
@@ -312,10 +191,7 @@ public class AnalyticsService {
 
     // Ventas recientes
     public List<Map<String, Object>> getRecentSales() {
-        return saleRepository.findAll().stream()
-                .filter(s -> s.getSaleDate() != null)
-                .sorted(Comparator.comparing(Sale::getSaleDate).reversed())
-                .limit(10)
+        return saleRepository.findTop10BySaleDateIsNotNullOrderBySaleDateDesc().stream()
                 .map(s -> {
                     Map<String, Object> saleData = new HashMap<>();
                     saleData.put("saleId", s.getId());
@@ -327,71 +203,41 @@ public class AnalyticsService {
                 })
                 .collect(Collectors.toList());
     }
-    
+
     // Analytics diarios - 1 row por día con todas las métricas
     public List<Map<String, Object>> getDailyAnalytics() {
         List<Map<String, Object>> result = new ArrayList<>();
-        List<Sale> allSales = saleRepository.findAll();
-        List<Installation> completedInstalls = installationRepository.findByStatus("COMPLETED");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.minusDays(6).atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+
+        Map<LocalDate, SaleRepository.DailyTotals> salesByDay = saleRepository.dailyTotals(start, end).stream()
+                .collect(Collectors.toMap(SaleRepository.DailyTotals::getDay, Function.identity()));
+        Map<LocalDate, BigDecimal> installationsByDay = installationRevenueByDay(start, end);
+
         for (int i = 6; i >= 0; i--) {
-            LocalDate date = LocalDate.now().minusDays(i);
-            LocalDateTime startOfDay = date.atStartOfDay();
-            LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
-            
-            // Filtrar ventas del día
-            List<Sale> daySales = allSales.stream()
-                    .filter(s -> inRange(s.getSaleDate(), startOfDay, endOfDay))
-                    .collect(Collectors.toList());
+            LocalDate date = today.minusDays(i);
+            SaleRepository.DailyTotals daySales = salesByDay.get(date);
 
             // Instalaciones completadas del día (ingreso sin costo registrado)
-            BigDecimal dayInstallRevenue = installationRevenue(completedInstalls, startOfDay, endOfDay);
+            BigDecimal dayInstallRevenue = installationsByDay.getOrDefault(date, BigDecimal.ZERO);
 
-            // Revenue del día
-            BigDecimal dayRevenue = daySales.stream()
-                    .map(Sale::getTotalAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .add(dayInstallRevenue);
+            BigDecimal dayRevenue = dayInstallRevenue.add(daySales != null ? daySales.getRevenue() : BigDecimal.ZERO);
+            BigDecimal dayCost = daySales != null ? daySales.getCost() : BigDecimal.ZERO;
+            BigDecimal dayProfit = dayInstallRevenue.add(daySales != null ? daySales.getProfit() : BigDecimal.ZERO);
 
-            // Cost del día
-            BigDecimal dayCost = daySales.stream()
-                    .map(Sale::getCostAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            // Profit del día
-            BigDecimal dayProfit = daySales.stream()
-                    .map(Sale::getProfitAmount)
-                    .filter(Objects::nonNull)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .add(dayInstallRevenue);
-
-            // Cantidad de ventas
-            int salesCount = daySales.size();
-            
-            // Items vendidos
-            int itemsSold = daySales.stream()
-                    .mapToInt(Sale::getQuantity)
-                    .sum();
-            
-            // Margen del día
-            BigDecimal dayMargin = dayRevenue.compareTo(BigDecimal.ZERO) > 0
-                    ? dayProfit.divide(dayRevenue, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
-                    : BigDecimal.ZERO;
-            
             Map<String, Object> dayData = new HashMap<>();
             dayData.put("date", date.format(formatter));
             dayData.put("revenue", dayRevenue);
             dayData.put("cost", dayCost);
             dayData.put("profit", dayProfit);
-            dayData.put("margin", dayMargin);
-            dayData.put("salesCount", salesCount);
-            dayData.put("itemsSold", itemsSold);
+            dayData.put("margin", margin(dayProfit, dayRevenue));
+            dayData.put("salesCount", daySales != null ? Math.toIntExact(daySales.getSalesCount()) : 0);
+            dayData.put("itemsSold", daySales != null ? Math.toIntExact(daySales.getItemsSold()) : 0);
             result.add(dayData);
         }
-        
+
         return result;
     }
 }

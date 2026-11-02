@@ -19,7 +19,9 @@ import java.lang.annotation.Target;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.properties.hibernate.generate_statistics=true",
+        "logging.level.org.hibernate.engine.internal.StatisticalLoggingSessionEventListener=off"
 })
 public @interface IsolatedDatabaseTest {
 }

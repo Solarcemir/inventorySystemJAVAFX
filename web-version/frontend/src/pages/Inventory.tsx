@@ -64,16 +64,7 @@ export default function Inventory() {
   const filtered = useMemo(() => {
     return products.filter((p) => {
       // Text search
-      if (search) {
-        const q = search.toLowerCase();
-        const matchesSearch = p.productName.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.provider.toLowerCase().includes(q) ||
-          (p.description || '').toLowerCase().includes(q) ||
-          (p.location || '').toLowerCase().includes(q) ||
-          String(p.id).includes(q);
-        if (!matchesSearch) return false;
-      }
+      if (search && !productService.matchesSearch(p, search)) return false;
       // Category
       if (filterCategory && p.category !== filterCategory) return false;
       // Provider

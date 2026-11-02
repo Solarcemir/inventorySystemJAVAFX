@@ -148,6 +148,18 @@ public class InvoiceService {
         return invoiceRepo.save(invoice);
     }
 
+    /** Sellers work on open invoices and leave the discount as it is. */
+    public void checkSellerMayEdit(Long invoiceId, BigDecimal discountPercent) {
+        Invoice invoice = getById(invoiceId);
+        if (!"OPEN".equals(invoice.getStatus())) {
+            throw ApiException.forbidden("Solo un administrador puede modificar una factura cerrada");
+        }
+        BigDecimal current = invoice.getDiscountPercent() != null ? invoice.getDiscountPercent() : BigDecimal.ZERO;
+        if (discountPercent != null && discountPercent.compareTo(current) != 0) {
+            throw ApiException.forbidden("Solo un administrador puede cambiar el descuento");
+        }
+    }
+
     @Transactional
     public Invoice updateSettings(Long invoiceId, String invoiceName, String clientName,
                                   BigDecimal discountPercent, String invoiceNumber, String carModel) {
@@ -223,7 +235,7 @@ public class InvoiceService {
         }
 
         if (client != null) {
-            addToClientSpent(client, clientTotal);
+            clientRepo.addToSpentAmount(client.getId(), clientTotal);
         }
 
         invoice.setStatus("FINALIZED");
@@ -247,12 +259,6 @@ public class InvoiceService {
                 .filter(c -> (c.getFirstName() + " " + c.getLastName()).trim().equalsIgnoreCase(wanted))
                 .toList();
         return matches.size() == 1 ? matches.get(0) : null;
-    }
-
-    private void addToClientSpent(Client client, BigDecimal amount) {
-        BigDecimal currentSpent = client.getSpentAmount() != null ? client.getSpentAmount() : BigDecimal.ZERO;
-        client.setSpentAmount(currentSpent.add(amount));
-        clientRepo.save(client);
     }
 
     /**
@@ -308,7 +314,7 @@ public class InvoiceService {
         for (Sale sale : linkedSales) {
             Client client = sale.getClient();
             if (client != null && sale.getTotalAmount() != null) {
-                addToClientSpent(client, sale.getTotalAmount().negate());
+                clientRepo.addToSpentAmount(client.getId(), sale.getTotalAmount().negate());
             }
         }
         if (!linkedSales.isEmpty()) {

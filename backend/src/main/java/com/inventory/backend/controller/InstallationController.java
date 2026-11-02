@@ -1,5 +1,6 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.auth.SessionUser;
 import com.inventory.backend.model.Installation;
 import com.inventory.backend.model.Invoice;
@@ -35,10 +36,11 @@ public class InstallationController {
     }
 
     @PutMapping("/{id}")
-    public Installation update(@PathVariable Long id, @RequestBody Installation installation) {
-        return installationService.update(id, installation);
+    public Installation update(@PathVariable Long id, @RequestBody Installation installation, HttpServletRequest request) {
+        return installationService.update(id, installation, SessionUser.from(request).isAdmin());
     }
 
+    @AdminOnly
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         installationService.delete(id);

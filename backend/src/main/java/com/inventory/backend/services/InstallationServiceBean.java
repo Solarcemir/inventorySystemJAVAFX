@@ -8,6 +8,7 @@ import com.inventory.backend.repository.InvoiceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -52,9 +53,12 @@ public class InstallationServiceBean {
     }
 
     @Transactional
-    public Installation update(Long id, Installation details) {
+    public Installation update(Long id, Installation details, boolean admin) {
         validate(details);
         Installation installation = getById(id);
+        if (!admin) {
+            checkSellerMayEdit(installation, details);
+        }
         installation.setServiceName(details.getServiceName());
         installation.setClientName(details.getClientName());
         installation.setInstallerName(details.getInstallerName());
@@ -63,7 +67,9 @@ public class InstallationServiceBean {
         installation.setStatus(details.getStatus());
         installation.setInvoiceNumber(details.getInvoiceNumber());
         installation.setCarModel(details.getCarModel());
-        installation.setInvoiceId(details.getInvoiceId());
+        if (admin) {
+            installation.setInvoiceId(details.getInvoiceId());
+        }
         if (details.getServiceDate() != null) {
             installation.setServiceDate(details.getServiceDate());
         }
@@ -108,6 +114,18 @@ public class InstallationServiceBean {
 
     public List<Installation> getByStatus(String status) {
         return repo.findByStatus(status);
+    }
+
+    // Sellers move an installation forward, but its price and a finished job belong to the admin
+    private void checkSellerMayEdit(Installation installation, Installation details) {
+        if ("COMPLETED".equals(installation.getStatus())) {
+            throw ApiException.forbidden("Solo un administrador puede modificar una instalacion completada");
+        }
+        BigDecimal current = installation.getPrice() != null ? installation.getPrice() : BigDecimal.ZERO;
+        BigDecimal requested = details.getPrice() != null ? details.getPrice() : BigDecimal.ZERO;
+        if (current.compareTo(requested) != 0) {
+            throw ApiException.forbidden("Solo un administrador puede cambiar el precio");
+        }
     }
 
     private void validate(Installation installation) {

@@ -1,5 +1,6 @@
 package com.inventory.backend.controller;
 
+import com.inventory.backend.auth.AdminOnly;
 import com.inventory.backend.auth.SessionUser;
 import com.inventory.backend.exception.ApiException;
 import com.inventory.backend.model.Invoice;
@@ -37,7 +38,13 @@ public class InvoiceController {
     }
 
     @PostMapping
-    public Invoice create(@RequestBody Invoice invoice, HttpServletRequest request) {
+    public Invoice create(@RequestBody Invoice details, HttpServletRequest request) {
+        // Only descriptive fields come from the browser: items, totals and status belong to the server
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceName(details.getInvoiceName());
+        invoice.setClientName(details.getClientName());
+        invoice.setInvoiceNumber(details.getInvoiceNumber());
+        invoice.setCarModel(details.getCarModel());
         invoice.setSellerUsername(SessionUser.from(request).username());
         return invoiceService.create(invoice);
     }
@@ -53,10 +60,14 @@ public class InvoiceController {
     }
 
     @PutMapping("/{id}/settings")
-    public Invoice updateSettings(@PathVariable Long id, @RequestBody Map<String, String> settings) {
+    public Invoice updateSettings(@PathVariable Long id, @RequestBody Map<String, String> settings,
+                                  HttpServletRequest request) {
         String invoiceName = settings.get("invoiceName");
         String clientName = settings.get("clientName");
         BigDecimal discount = parseDiscount(settings.get("discountPercent"));
+        if (!SessionUser.from(request).isAdmin()) {
+            invoiceService.checkSellerMayEdit(id, discount);
+        }
         String invoiceNumber = settings.get("invoiceNumber");
         String carModel = settings.get("carModel");
         return invoiceService.updateSettings(id, invoiceName, clientName, discount, invoiceNumber, carModel);
@@ -78,6 +89,7 @@ public class InvoiceController {
         return invoiceService.finalize(id);
     }
 
+    @AdminOnly
     @PostMapping("/{id}/reopen")
     public Invoice reopen(@PathVariable Long id) {
         return invoiceService.reopen(id);
@@ -88,6 +100,7 @@ public class InvoiceController {
         invoiceService.cancel(id);
     }
 
+    @AdminOnly
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         invoiceService.delete(id);

@@ -5,6 +5,7 @@ import { productService } from '../services/productService';
 import { clientService } from '../services/clientService';
 import { installationService } from '../services/installationService';
 import { imageService } from '../services/imageService';
+import { isAdmin } from '../services/authService';
 import { getErrorMessage } from '../services/api';
 import { Invoice, Product, Client, Installation } from '../types';
 
@@ -22,6 +23,7 @@ const emptyInstallation = (): Omit<Installation, 'id'> => ({
 });
 
 export default function Invoices() {
+  const admin = isAdmin();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -150,12 +152,7 @@ export default function Invoices() {
 
   const filteredProducts = useMemo(() => {
     if (!productSearch) return products;
-    const q = productSearch.toLowerCase();
-    return products.filter((p) =>
-      p.productName.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q) ||
-      String(p.id).includes(q)
-    );
+    return products.filter((p) => productService.matchesSearch(p, productSearch));
   }, [products, productSearch]);
 
   const handleCreate = async () => {
@@ -326,7 +323,7 @@ export default function Invoices() {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>${activeInvoice?.invoiceName || 'Invoice'}</title>
+      <html><head><title>Invoice</title>
       <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; }
         .inv-header { display: flex; justify-content: space-between; align-items: start; border-bottom: 3px solid #2c3e50; padding-bottom: 20px; margin-bottom: 20px; }
@@ -351,6 +348,8 @@ export default function Invoices() {
       </body></html>
     `);
     printWindow.document.close();
+    // Set apart from the markup above: the name is typed by users, so it must never be parsed as HTML
+    printWindow.document.title = activeInvoice?.invoiceName || 'Invoice';
     printWindow.focus();
     setTimeout(() => { printWindow.print(); }, 400);
   };
@@ -646,6 +645,11 @@ export default function Invoices() {
                               </div>
                             );
                           })}
+                          {filteredProducts.length > 10 && (
+                            <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                              Showing 10 of {filteredProducts.length}. Keep typing to narrow it down.
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -797,10 +801,11 @@ export default function Invoices() {
 
               {/* Actions */}
               <div className="invoice-actions">
-                {/* Settings always available */}
-                <button className="btn btn-secondary" onClick={() => openSettingsFor(activeInvoice)}>
-                  Settings
-                </button>
+                {(admin || activeInvoice.status === 'OPEN') && (
+                  <button className="btn btn-secondary" onClick={() => openSettingsFor(activeInvoice)}>
+                    Settings
+                  </button>
+                )}
 
                 {activeInvoice.status === 'OPEN' && (
                   <>
@@ -815,15 +820,19 @@ export default function Invoices() {
 
                 {activeInvoice.status === 'FINALIZED' && (
                   <>
-                    <button className="btn btn-secondary" onClick={handleReopen} title="Reverse inventory and re-open for editing">
-                      ✏️ Edit (Reopen)
-                    </button>
+                    {admin && (
+                      <button className="btn btn-secondary" onClick={handleReopen} title="Reverse inventory and re-open for editing">
+                        ✏️ Edit (Reopen)
+                      </button>
+                    )}
                     <button className="btn" style={{ background: '#8e44ad', color: '#fff' }} onClick={() => openInstallModalFor(activeInvoice)}>
                       🔧 Assign Installation
                     </button>
-                    <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
-                      🗑️ Delete
-                    </button>
+                    {admin && (
+                      <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
+                        🗑️ Delete
+                      </button>
+                    )}
                   </>
                 )}
 
@@ -866,7 +875,7 @@ export default function Invoices() {
               <label>Car Model</label>
               <input type="text" value={editCarModel} onChange={(e) => setEditCarModel(e.target.value)} placeholder="e.g. Toyota Corolla 2020" />
             </div>
-            {activeInvoice.status === 'OPEN' && (
+            {admin && activeInvoice.status === 'OPEN' && (
               <div className="form-group">
                 <label>Discount (%)</label>
                 <input type="number" step="0.1" min="0" max="100" value={editDiscount} onChange={(e) => setEditDiscount(e.target.value)} />

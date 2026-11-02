@@ -14,7 +14,14 @@ import com.inventory.backend.services.InvoiceService;
 import com.inventory.backend.services.SaleService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,6 +162,60 @@ class InvoiceFlowTests {
 
         assertThat(sale.getTotalAmount()).isEqualByComparingTo("300.00");
         assertThat(data.stock(speaker)).isEqualTo(7);
+    }
+
+    private int sellAtTheSameTime(List<Long> productIds, Long clientId) throws Exception {
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService pool = Executors.newFixedThreadPool(productIds.size());
+        List<Future<Boolean>> results = new ArrayList<>();
+
+        for (Long productId : productIds) {
+            results.add(pool.submit(() -> {
+                start.await();
+                try {
+                    sales.createSaleWithClient(productId, clientId, 1);
+                    return true;
+                } catch (ApiException outOfStock) {
+                    return false;
+                }
+            }));
+        }
+        start.countDown();
+
+        int sold = 0;
+        for (Future<Boolean> result : results) {
+            if (result.get(30, TimeUnit.SECONDS)) {
+                sold++;
+            }
+        }
+        pool.shutdown();
+        return sold;
+    }
+
+    @Test
+    void simultaneousSalesCannotOversell() throws Exception {
+        Product speaker = data.product("Speaker", "100.00", "60.00", 10);
+        Client ana = data.client("Ana", "Gomez");
+
+        int sold = sellAtTheSameTime(Collections.nCopies(24, speaker.getId()), ana.getId());
+
+        assertThat(sold).isEqualTo(10);
+        assertThat(data.stock(speaker)).isZero();
+    }
+
+    // Different products, so only the client's row is shared: nothing else serializes these sales
+    @Test
+    void simultaneousSalesToOneClientAllCountTowardsTheirTotal() throws Exception {
+        Client ana = data.client("Ana", "Gomez");
+        List<Long> productIds = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            productIds.add(data.product("Product " + i, "100.00", "60.00", 5).getId());
+        }
+
+        int sold = sellAtTheSameTime(productIds, ana.getId());
+
+        assertThat(sold).isEqualTo(20);
+        assertThat(data.clients.findById(ana.getId()).orElseThrow().getSpentAmount()).isEqualByComparingTo("2000.00");
     }
 
     @Test
