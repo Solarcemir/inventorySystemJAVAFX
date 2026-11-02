@@ -44,6 +44,7 @@ export const imageService = {
     // Extract just the filename from any stored path format
     const filename = imagePath.split('/').pop() || imagePath.split('\\').pop() || '';
     if (!filename) return null;
-    return `/api/images/serve/${filename}`;
+    // Encoded so names with "#", "?" or "%" still reach the server whole
+    return `/api/images/serve/${encodeURIComponent(filename)}`;
   },
 };

@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -137,6 +138,57 @@ class ImageFolderTests {
         assertThat(serve(name, seller).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(upload(uniqueName("new.jpg"), "picture", seller).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(fileCount()).isEqualTo(before);
+    }
+
+    @Test
+    void namesWithSpecialCharactersAreServedWhenEncoded() throws IOException {
+        String name = uniqueName(" radio #2 (50%).png");
+        Files.writeString(folder.resolve(name), "picture");
+        String encoded = java.net.URLEncoder.encode(name, StandardCharsets.UTF_8).replace("+", "%20");
+
+        ResponseEntity<byte[]> response = rest.exchange(java.net.URI.create(rest.getRootUri() + "/api/images/serve/" + encoded),
+                HttpMethod.GET, new HttpEntity<>(cookieHeader(seller)), byte[].class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(new String(response.getBody(), StandardCharsets.UTF_8)).isEqualTo("picture");
+    }
+
+    @Test
+    void servedImagesCannotRunScript() throws IOException {
+        String name = uniqueName("logo.svg");
+        Files.writeString(folder.resolve(name), "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>");
+
+        ResponseEntity<byte[]> response = serve(name, seller);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getFirst("Content-Security-Policy")).contains("sandbox", "default-src 'none'");
+        assertThat(response.getHeaders().getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
+    }
+
+    @Test
+    void aFailedUploadDoesNotRevealServerFolders() throws IOException {
+        long before = fileCount();
+
+        ResponseEntity<String> response = upload("bad:name|<>.jpg", "picture", admin);
+
+        assertThat(response.getBody()).doesNotContain("Exception", "Users", "Documents", "\\");
+        assertThat(fileCount()).isEqualTo(before);
+    }
+
+    @Test
+    void imagesCannotBeReadFromOutsideTheFolder() {
+        HttpHeaders headers = cookieHeader(seller);
+        for (String path : List.of("..%2F..%2Fpom.xml", "..%5C..%5Cpom.xml", "C:%5CWindows%5Cwin.ini")) {
+            ResponseEntity<String> response = rest.exchange(java.net.URI.create(rest.getRootUri() + "/api/images/serve/" + path),
+                    HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            assertThat(response.getStatusCode().is2xxSuccessful()).as(path).isFalse();
+        }
+    }
+
+    private HttpHeaders cookieHeader(String cookie) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.COOKIE, cookie);
+        return headers;
     }
 
     @Test

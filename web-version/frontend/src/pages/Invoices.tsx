@@ -44,6 +44,8 @@ export default function Invoices() {
   const [addProductId, setAddProductId] = useState(0);
   const [addProductName, setAddProductName] = useState('');
   const [addQty, setAddQty] = useState(1);
+  const [addingItem, setAddingItem] = useState(false);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -161,12 +163,15 @@ export default function Invoices() {
       setError('Maximum 5 open invoices allowed. Finalize or cancel one first.');
       return;
     }
+    setCreatingInvoice(true);
     try {
       const inv = await invoiceService.create({ invoiceName: `Invoice #${invoices.length + 1}` });
       await loadData();
       setActiveInvoice(inv);
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create invoice'));
+    } finally {
+      setCreatingInvoice(false);
     }
   };
 
@@ -177,6 +182,7 @@ export default function Invoices() {
       setError('Quantity must be at least 1');
       return;
     }
+    setAddingItem(true);
     try {
       const updated = await invoiceService.addItem(activeInvoice.id!, addProductId, addQty);
       setActiveInvoice(updated);
@@ -188,6 +194,8 @@ export default function Invoices() {
       await loadData();
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to add item'));
+    } finally {
+      setAddingItem(false);
     }
   };
 
@@ -509,7 +517,7 @@ export default function Invoices() {
         <div className="invoice-list-panel">
           <div className="invoice-list-header">
             <h2>Open Invoices ({openInvoices.length}/5)</h2>
-            <button className="btn btn-primary" onClick={handleCreate} disabled={openInvoices.length >= 5}>
+            <button className="btn btn-primary" onClick={handleCreate} disabled={openInvoices.length >= 5 || creatingInvoice}>
               + New Invoice
             </button>
           </div>
@@ -661,7 +669,7 @@ export default function Invoices() {
                       className="invoice-qty-input"
                       placeholder="Qty"
                     />
-                    <button className="btn btn-accent" onClick={handleAddItem} disabled={!addProductId || addQty < 1}>
+                    <button className="btn btn-accent" onClick={handleAddItem} disabled={!addProductId || addQty < 1 || addingItem}>
                       Add
                     </button>
                   </div>

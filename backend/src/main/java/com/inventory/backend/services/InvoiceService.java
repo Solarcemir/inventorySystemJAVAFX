@@ -107,6 +107,7 @@ public class InvoiceService {
 
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
+        ProductService.checkSellable(product);
 
         if (product.getProductQuantity() < quantity) {
             throw ApiException.conflict("Stock insuficiente. Disponible: " + product.getProductQuantity());
@@ -189,6 +190,9 @@ public class InvoiceService {
         if (!"OPEN".equals(invoice.getStatus())) {
             throw ApiException.conflict("Solo se pueden finalizar facturas abiertas");
         }
+        if (invoice.getItems().isEmpty()) {
+            throw ApiException.conflict("La factura no tiene productos");
+        }
 
         invoice.recalculate();
         Client client = findClientByName(invoice.getClientName());
@@ -217,6 +221,9 @@ public class InvoiceService {
 
             Product product = productRepo.findByIdForUpdate(item.getProductId())
                     .orElseThrow(() -> ApiException.notFound("Producto no encontrado: " + item.getProductName()));
+            if (product.getDeleted()) {
+                throw ApiException.conflict("El producto \"" + product.getProductName() + "\" fue eliminado: quitalo de la factura");
+            }
             if (product.getProductQuantity() < item.getQuantity()) {
                 throw ApiException.conflict("Stock insuficiente para " + product.getProductName()
                         + ". Disponible: " + product.getProductQuantity());

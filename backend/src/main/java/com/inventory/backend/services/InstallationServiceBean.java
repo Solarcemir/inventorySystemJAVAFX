@@ -11,9 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class InstallationServiceBean {
+
+    private static final Set<String> STATUSES = Set.of("PENDING", "COMPLETED", "CANCELLED");
 
     private final InstallationRepository repo;
     private final InvoiceRepository invoiceRepo;
@@ -55,6 +58,9 @@ public class InstallationServiceBean {
     @Transactional
     public Installation update(Long id, Installation details, boolean admin) {
         validate(details);
+        if (details.getStatus() == null) {
+            throw ApiException.badRequest("El estado es obligatorio");
+        }
         Installation installation = getById(id);
         if (!admin) {
             checkSellerMayEdit(installation, details);
@@ -131,6 +137,10 @@ public class InstallationServiceBean {
     private void validate(Installation installation) {
         if (installation.getServiceName() == null || installation.getServiceName().isBlank()) {
             throw ApiException.badRequest("El nombre del servicio es obligatorio");
+        }
+        // A missing status becomes PENDING when the installation is created
+        if (installation.getStatus() != null && !STATUSES.contains(installation.getStatus())) {
+            throw ApiException.badRequest("Estado no valido: " + installation.getStatus());
         }
         if (installation.getPrice() != null && installation.getPrice().signum() < 0) {
             throw ApiException.badRequest("El precio no puede ser negativo");

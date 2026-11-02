@@ -1,5 +1,6 @@
 package com.inventory.backend;
 
+import com.inventory.backend.auth.LoginThrottle;
 import com.inventory.backend.model.Client;
 import com.inventory.backend.model.Installation;
 import com.inventory.backend.model.Product;
@@ -30,8 +31,10 @@ class TestData {
     @Autowired ActivityLogRepository logs;
     @Autowired CalendarNoteRepository notes;
     @Autowired UserRepository users;
+    @Autowired LoginThrottle loginThrottle;
 
     void clear() {
+        loginThrottle.reset();
         sales.deleteAll();
         invoices.deleteAll();
         installations.deleteAll();

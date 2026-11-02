@@ -1,9 +1,9 @@
-import { useEffect, useState, useMemo, FormEvent } from 'react';
+import { useEffect, useState, useMemo, useRef, FormEvent } from 'react';
 import { productService } from '../services/productService';
 import { clientService } from '../services/clientService';
 import { saleService } from '../services/saleService';
 import { imageService } from '../services/imageService';
-import { getErrorMessage } from '../services/api';
+import { getErrorMessage, newIdempotencyKey } from '../services/api';
 import { isAdmin } from '../services/authService';
 import { Product, Client } from '../types';
 
@@ -30,6 +30,9 @@ export default function Inventory() {
   const [sellQty, setSellQty] = useState(1);
   const [sellClientId, setSellClientId] = useState(0);
   const [sellError, setSellError] = useState('');
+  const [selling, setSelling] = useState(false);
+  // Kept until the sale succeeds, so retrying after an error can never sell twice
+  const saleKey = useRef<string | null>(null);
 
   // Edit dialog
   const [showEdit, setShowEdit] = useState(false);
@@ -98,12 +101,15 @@ export default function Inventory() {
     e.preventDefault();
     setSellError('');
     if (!selected) return;
+    saleKey.current = saleKey.current ?? newIdempotencyKey();
+    setSelling(true);
     try {
       if (sellClientId) {
-        await saleService.createWithClient(selected.id!, sellClientId, sellQty);
+        await saleService.createWithClient(selected.id!, sellClientId, sellQty, saleKey.current);
       } else {
-        await saleService.create(selected.id!, sellQty);
+        await saleService.create(selected.id!, sellQty, saleKey.current);
       }
+      saleKey.current = null;
       setShowSell(false);
       setSellQty(1);
       setSellClientId(0);
@@ -111,6 +117,8 @@ export default function Inventory() {
       await loadData();
     } catch (err) {
       setSellError(getErrorMessage(err, 'Failed to create sale'));
+    } finally {
+      setSelling(false);
     }
   };
 
@@ -328,7 +336,7 @@ export default function Inventory() {
               {sellError && <div className="error-message">{sellError}</div>}
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowSell(false)}>Cancel</button>
-                <button type="submit" className="btn btn-sell">Confirm Sale</button>
+                <button type="submit" className="btn btn-sell" disabled={selling}>{selling ? 'Selling...' : 'Confirm Sale'}</button>
               </div>
             </form>
           </div>

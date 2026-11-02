@@ -1,6 +1,8 @@
 package com.inventory.backend.controller;
 
 import com.inventory.backend.auth.AdminOnly;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/images")
 public class ImageController {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageController.class);
 
     private static final Path IMAGE_DIR = Paths.get(
             System.getProperty("user.home"), "Documents", "CFT-Electronic", "images");
@@ -91,9 +95,12 @@ public class ImageController {
 
             Files.copy(file.getInputStream(), dest);
             return ResponseEntity.ok(Map.of("filename", filename));
+        } catch (InvalidPathException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "El nombre del archivo no es valido. Cambialo e intenta de nuevo."));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("message", e.getClass().getSimpleName() + ": " + e.getMessage()));
+            // The error names folders on the server PC: it goes to the server log, never to the browser
+            log.warn("Could not save an uploaded image", e);
+            return ResponseEntity.internalServerError().body(Map.of("message", "No se pudo guardar la imagen"));
         }
     }
 
@@ -116,6 +123,10 @@ public class ImageController {
                 ? MediaType.parseMediaType(contentType)
                 : MediaType.APPLICATION_OCTET_STREAM;
 
-        return ResponseEntity.ok().contentType(mediaType).body(resource);
+        // An SVG opened in its own tab could otherwise run script with the user's session
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+                .body(resource);
     }
 }

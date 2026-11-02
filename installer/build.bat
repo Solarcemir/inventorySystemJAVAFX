@@ -97,7 +97,7 @@ if errorlevel 1 (
 echo.
 echo  =====================================================
 echo   SUCCESS! Installer created:
-echo   %INSTALLER%output\CFT-Electronic-Setup-v1.3.0.exe
+echo   %INSTALLER%output\CFT-Electronic-Setup-v1.4.0.exe
 echo  =====================================================
 echo.
 pause

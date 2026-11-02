@@ -1,5 +1,6 @@
 
 package com.inventory.backend.controller;
+import com.inventory.backend.auth.LoginThrottle;
 import com.inventory.backend.auth.PublicEndpoint;
 import com.inventory.backend.auth.SessionUser;
 import com.inventory.backend.model.User;
@@ -23,15 +24,20 @@ public class UserController {
   @Autowired
     private ActivityLogService activityLogService;
 
+  @Autowired
+    private LoginThrottle loginThrottle;
+
     @PublicEndpoint
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Map<String,String> credentials, HttpServletRequest request){
       String username = credentials.get("username");
       String password = credentials.get("password");
+      loginThrottle.checkAllowed(username);
       User user = UserService.findValidUser(username, password);
 
       Map<String, Object> result = new HashMap<>();
       if (user != null) {
+        loginThrottle.recordSuccess(username);
         endSession(request); // A new login always gets a new session id
         request.getSession(true).setAttribute(SessionUser.SESSION_KEY, new SessionUser(user.getUsername(), user.getRole()));
         activityLogService.log("LOGIN", "User \"" + user.getUsername() + "\" logged in (" + user.getRole() + ")", user.getUsername());
@@ -41,6 +47,7 @@ public class UserController {
         result.put("role", user.getRole());
         result.put("id", user.getId());
       } else {
+        loginThrottle.recordFailure(username);
         result.put("success", false);
       }
       return result;

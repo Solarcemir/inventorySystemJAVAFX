@@ -49,6 +49,7 @@ public class SaleService {
 
         Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> ApiException.notFound("Producto no encontrado"));
+        ProductService.checkSellable(product);
 
         // Verificar stock disponible
         if (product.getProductQuantity() < quantity) {
@@ -73,6 +74,7 @@ public class SaleService {
         Client client = null;
         if (clientId != null) {
             client = clientRepository.findById(clientId)
+                    .filter(found -> !Boolean.TRUE.equals(found.getDeleted()))
                     .orElseThrow(() -> ApiException.notFound("Cliente no encontrado"));
 
             // Actualizar el monto gastado del cliente

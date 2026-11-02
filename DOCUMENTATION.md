@@ -57,6 +57,8 @@ Each new page needs a route in `App.tsx` and in `SpaController.java`. Without th
 - A sale that belongs to an invoice can only be reversed through that invoice.
 - The client is free text. When it matches exactly one active client, the sales are linked to that client and count toward their total spent.
 
+**Retries.** The sale endpoints accept an optional `Idempotency-Key` header. Repeating a key returns the first result instead of selling again, per user and per sale, for 10 minutes; a failed attempt is forgotten so it can be retried. Keys live in memory, so a restart forgets them. The frontend keeps one key per sale until it succeeds, and disables create buttons while a request is running. Generate keys with `newIdempotencyKey`, because `crypto.randomUUID` does not exist on plain HTTP pages such as `http://192.168.x.x:8080`.
+
 **Installation.** A separate record. When `COMPLETED`, its price counts as revenue and profit, with no cost. Billing one creates an invoice with a service line, which moves no stock and creates no `Sale`, so the revenue is not counted twice.
 
 **Product search.** The Inventory and Invoices search bars share `productService.matchesSearch`. Every word typed must appear in the name, category, provider, description, location or ID, in any position and order, ignoring case, accents and separators.
@@ -77,6 +79,9 @@ Each new page needs a route in `App.tsx` and in `SpaController.java`. Without th
 - Sellers can sell, create and finalize invoices, edit or cancel open invoices (except the discount), and create and advance installations. Only admins can change discounts, edit closed invoices, reopen or delete invoices, change an installation's price, edit completed installations, or delete installations. These rules are enforced by the server, not only by hiding buttons.
 - Queries only use Spring Data methods or `@Query` with bound parameters. Never build a query by joining strings, and never save an entity received from the browser without copying the allowed fields.
 - Sessions live in memory, so restarting the server logs everyone out.
+- After 5 wrong passwords for a username, that username must wait 30 seconds before each new attempt (`LoginThrottle`). Unknown usernames are treated the same way.
+- Every response carries `X-Frame-Options`, `X-Content-Type-Options` and `Referrer-Policy`, and served images cannot run script.
+- Error responses never include stack traces or database messages: those go only to the server log.
 - Known limitation: the local network uses HTTP, so passwords travel unencrypted between the browsers and the server.
 
 ## Configuration
@@ -110,13 +115,16 @@ Then open http://localhost:8080. For frontend work, also run `npm run dev` and o
 **Tests.**
 
 ```bash
-cd backend && mvn test
+cd backend && mvn test                  # backend, on an in-memory database
+cd web-version/frontend && npm test     # frontend helpers (search, retry keys, image addresses)
 ```
 
-They run on an in-memory database and a temporary image folder inside `target/`, whatever `backend/config/` contains.
+The backend tests use an in-memory database and a temporary image folder inside `target/`, whatever `backend/config/` contains.
 
 ## Building the installer
 
 Run `installer\build.bat`. It needs Node, Maven, Inno Setup and `backend/config/application.properties`, and writes the installer to `installer/output/`.
+
+`stop.bat`, also run by the uninstaller, stops only the Java process running this installation's `backend.jar`; other Java programs on the PC keep running.
 
 Install it on the server PC only; the other PCs just use the browser. Installing does not touch the database or the images folder, but the installer does contain the database credentials, so do not share it.

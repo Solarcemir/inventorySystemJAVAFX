@@ -77,6 +77,16 @@ public class ProductService {
     return saved;
   }
 
+  /** A deleted product, or one without a price, cannot go into a sale or an invoice. */
+  static void checkSellable(Product product){
+    if(product.getDeleted()) {
+      throw ApiException.conflict("El producto \"" + product.getProductName() + "\" fue eliminado");
+    }
+    if(product.getPrice() == null) {
+      throw ApiException.conflict("El producto \"" + product.getProductName() + "\" no tiene precio");
+    }
+  }
+
   private void validate(Product p){
     if(p.getProductName() == null || p.getProductName().isBlank()) {
       throw ApiException.badRequest("El nombre del producto es obligatorio");

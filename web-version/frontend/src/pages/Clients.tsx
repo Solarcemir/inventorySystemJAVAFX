@@ -13,6 +13,7 @@ export default function Clients() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const [form, setForm] = useState<Client>(emptyClient);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [listError, setListError] = useState('');
   const [search, setSearch] = useState('');
@@ -47,6 +48,7 @@ export default function Clients() {
     e.preventDefault();
     setError('');
     if (!form.firstName.trim() || !form.lastName.trim()) { setError('First and last name are required'); return; }
+    setSaving(true);
     try {
       if (editing) {
         await clientService.update(editing.id!, form);
@@ -59,6 +61,8 @@ export default function Clients() {
       await loadClients();
     } catch (err) {
       setError(getErrorMessage(err, editing ? 'Failed to update client' : 'Failed to add client'));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -124,7 +128,7 @@ export default function Clients() {
               {error && <div className="error-message">{error}</div>}
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editing ? 'Save Changes' : 'Add Client'}</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{editing ? 'Save Changes' : 'Add Client'}</button>
               </div>
             </form>
           </div>

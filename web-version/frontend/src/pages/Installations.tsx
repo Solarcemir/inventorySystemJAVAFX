@@ -34,6 +34,7 @@ export default function Installations() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Installation | null>(null);
   const [form, setForm] = useState<Installation>(emptyInstallation);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [creatingInvoiceFor, setCreatingInvoiceFor] = useState<number | null>(null);
 
@@ -88,6 +89,7 @@ export default function Installations() {
     setError('');
     if (!form.serviceName.trim()) { setError('Service name is required'); return; }
     if (!form.installerName.trim()) { setError('Installer name is required'); return; }
+    setSaving(true);
     try {
       if (editing) {
         await installationService.update(editing.id!, form);
@@ -103,6 +105,8 @@ export default function Installations() {
       await loadData();
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to save installation'));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -286,7 +290,7 @@ export default function Installations() {
               {error && <div className="error-message">{error}</div>}
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editing ? 'Update' : 'Create'}</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{editing ? 'Update' : 'Create'}</button>
               </div>
             </form>
           </div>

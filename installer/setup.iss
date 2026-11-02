@@ -5,7 +5,7 @@
 ; ============================================================
 
 #define AppName    "CFT Electronic"
-#define AppVersion "1.3.0"
+#define AppVersion "1.4.0"
 #define AppPublisher "CFT Electronic"
 
 [Setup]
@@ -68,11 +68,11 @@ Filename: "netsh"; Parameters: "advfirewall firewall add rule name=""CFT Electro
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\start.vbs"""; WorkingDir: "{app}"; Description: "Launch CFT Electronic now"; Flags: postinstall nowait skipifsilent
 
 [UninstallRun]
-; Kill running backend before uninstall
-Filename: "taskkill"; Parameters: "/F /IM javaw.exe /T"; Flags: runhidden
+; Stop this app's backend before uninstall (only its own java process, see stop.bat)
+Filename: "{app}\stop.bat"; Flags: runhidden; RunOnceId: "StopBackend"
 
 ; Remove firewall rule
-Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CFT Electronic"""; Flags: runhidden
+Filename: "netsh"; Parameters: "advfirewall firewall delete rule name=""CFT Electronic"""; Flags: runhidden; RunOnceId: "RemoveFirewallRule"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"

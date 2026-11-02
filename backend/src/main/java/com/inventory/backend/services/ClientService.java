@@ -3,6 +3,7 @@ package com.inventory.backend.services;
 import com.inventory.backend.exception.ApiException;
 import com.inventory.backend.model.Client;
 import com.inventory.backend.repository.ClientRepository;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -72,7 +73,7 @@ public class ClientService{
   }
 
   public Client findMostLoyalClient(){
-    return repo.findFirstByOrderBySpentAmountDesc();
+    return repo.findMostLoyal(Limit.of(1)).stream().findFirst().orElse(null);
   }
 
   public long getClientCount(){

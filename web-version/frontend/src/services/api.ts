@@ -16,6 +16,15 @@ api.interceptors.response.use(undefined, (error) => {
   return Promise.reject(error);
 });
 
+/**
+ * Identifies one action, so the server can tell a retry from a new request.
+ * Not crypto.randomUUID: it only exists on HTTPS or localhost, and other PCs in the shop use plain HTTP.
+ */
+export function newIdempotencyKey(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 /** The server's explanation of a failed request, or the fallback when it gave none. */
 export function getErrorMessage(err: any, fallback: string): string {
   return err?.response?.data?.message || fallback;

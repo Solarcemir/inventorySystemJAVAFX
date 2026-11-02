@@ -1,5 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { authService } from '../services/authService';
+import { getErrorMessage } from '../services/api';
 
 interface LoginProps {
   onLogin: () => void;
@@ -26,8 +27,8 @@ export default function Login({ onLogin }: LoginProps) {
       } else {
         setError('Invalid username or password');
       }
-    } catch {
-      setError('Connection error. Is the backend running?');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Connection error. Is the backend running?'));
     } finally {
       setLoading(false);
     }
